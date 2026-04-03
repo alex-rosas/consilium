@@ -7,7 +7,7 @@ This is the Phase 2 swap boundary — swap MockRetrieval for QuaestorClient
 and the schema contract guarantees compatibility.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Dict, Optional
 
 
@@ -16,6 +16,8 @@ class RetrievalResult(BaseModel):
     Single retrieval result.
     Schema must match Quaestor's /retrieve API response for Phase 2 swap.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     chunk_text: str = Field(..., description="Retrieved text chunk")
     metadata: Dict[str, str] = Field(..., description="Document metadata")

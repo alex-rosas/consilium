@@ -6,7 +6,7 @@ Phase 1+: Full multi-agent orchestration via LangGraph.
 """
 
 from fastapi import FastAPI, HTTPException
-from consilium.schemas.workflow import WorkflowRequest, WorkflowResponse
+from consilium.schemas.workflow import WorkflowRequest, WorkflowResponse, WorkflowResult
 from consilium.agents.analyst import AnalystAgent, AnalystInput
 from consilium.integrations.retrieval_mock import MockRetrieval
 from consilium.config import settings
@@ -77,7 +77,7 @@ async def execute_workflow(request: WorkflowRequest) -> WorkflowResponse:
         analyst_input = AnalystInput(
             task=f"Analyze compliance risks for: {request.query}",
             context={},
-            retrieved_chunks=[chunk.model_dump() for chunk in chunks]
+            retrieved_chunks=chunks
         )
 
         analyst_output = await analyst.execute(analyst_input)
@@ -86,10 +86,10 @@ async def execute_workflow(request: WorkflowRequest) -> WorkflowResponse:
         # Step 3: Build response
         return WorkflowResponse(
             query=request.query,
-            result={
-                "risk_findings": analyst_output.risk_findings,
-                "summary": analyst_output.result.get("summary", "")
-            },
+            result=WorkflowResult(
+                risk_findings=analyst_output.risk_findings,
+                summary=analyst_output.result.get("summary", "")
+            ),
             confidence=analyst_output.confidence,
             agents_invoked=[analyst.name]
         )

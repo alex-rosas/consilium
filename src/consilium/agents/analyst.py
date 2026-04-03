@@ -7,15 +7,15 @@ Phase 1+: LLM-powered analysis via Ollama
 
 from consilium.agents.base import BaseAgent
 from consilium.schemas.agent import AgentInput, AgentOutput
-from consilium.integrations.retrieval_mock import MockRetrieval
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Dict, Any
+from consilium.integrations.retrieval_mock import RetrievalResult
+from pydantic import Field
+from typing import List, Dict
 
 
 class AnalystInput(AgentInput):
     """Analyst-specific input — extends base with retrieved chunks."""
 
-    retrieved_chunks: List[Dict[str, Any]] = Field(
+    retrieved_chunks: List[RetrievalResult] = Field(
         ...,
         description="Retrieved document chunks to analyze"
     )
@@ -23,8 +23,6 @@ class AnalystInput(AgentInput):
 
 class AnalystOutput(AgentOutput):
     """Analyst-specific output — extends base with risk findings."""
-
-    model_config = ConfigDict(extra="forbid")
 
     risk_findings: List[Dict[str, str]] = Field(
         default_factory=list,
@@ -44,14 +42,13 @@ class AnalystAgent(BaseAgent):
     """
 
     def __init__(self) -> None:
-        """Initialize with mock retrieval for Phase 0."""
-        self.retrieval = MockRetrieval()
+        pass
 
     @property
     def capabilities(self) -> List[str]:
         return ["risk_classification", "compliance_analysis", "regulatory_assessment"]
 
-    async def execute(self, input: AnalystInput) -> AnalystOutput:  # type: ignore[override]
+    async def execute(self, input: AnalystInput) -> AnalystOutput:  # type: ignore[override]  # TODO(phase1): make BaseAgent generic[I, O] to remove this suppress
         """
         Analyze document chunks and classify compliance risks.
 
@@ -65,16 +62,13 @@ class AnalystAgent(BaseAgent):
         risk_findings = []
 
         for chunk in chunks:
-            chunk_text = chunk.get("chunk_text", "")
-            metadata = chunk.get("metadata", {})
-
-            risk_level = self._classify_risk(chunk_text)
+            risk_level = self._classify_risk(chunk.chunk_text)
 
             risk_findings.append({
-                "clause": metadata.get("section", "Unknown"),
+                "clause": chunk.metadata.get("section", "Unknown"),
                 "risk_level": risk_level,
-                "evidence": chunk_text[:100] + "...",
-                "document": metadata.get("document", "Unknown")
+                "evidence": chunk.chunk_text[:100] + "...",
+                "document": chunk.metadata.get("document", "Unknown")
             })
 
         confidence = 0.75  # Fixed placeholder for Phase 0 rule-based classification
