@@ -6,7 +6,7 @@ Validates that schema validation works correctly at all boundaries.
 import pytest
 from pydantic import ValidationError
 from consilium.schemas.agent import AgentInput, AgentOutput
-from consilium.schemas.workflow import WorkflowRequest, WorkflowResponse
+from consilium.schemas.workflow import WorkflowRequest, WorkflowResponse, WorkflowResult
 
 
 class TestAgentSchemas:
@@ -51,13 +51,27 @@ class TestWorkflowSchemas:
         with pytest.raises(ValidationError):
             WorkflowRequest(query="x" * 1001)
 
+    def test_workflow_request_rejects_unknown_fields(self) -> None:
+        with pytest.raises(ValidationError):
+            WorkflowRequest(query="What are the compliance risks?", unknown_field="injected")  # type: ignore
+
     def test_workflow_response_valid(self) -> None:
         resp = WorkflowResponse(
             query="Test query",
-            result={"findings": []},
+            result=WorkflowResult(risk_findings=[], summary="ok"),
             confidence=0.75,
             agents_invoked=["AnalystAgent"]
         )
         assert resp.confidence == 0.75
         assert len(resp.agents_invoked) == 1
         assert resp.error is None
+
+    def test_workflow_response_rejects_unknown_fields(self) -> None:
+        with pytest.raises(ValidationError):
+            WorkflowResponse(
+                query="Test",
+                result=WorkflowResult(risk_findings=[], summary="ok"),
+                confidence=0.75,
+                agents_invoked=[],
+                unknown_field="injected"  # type: ignore
+            )
