@@ -58,3 +58,12 @@ class TestAnalystAgent:
     async def test_missing_required_field_raises(self) -> None:
         with pytest.raises(ValidationError):
             AnalystInput(task="test", context={})  # type: ignore
+
+    async def test_malformed_chunk_rejected(self) -> None:
+        """A chunk missing required RetrievalResult fields must raise ValidationError."""
+        with pytest.raises(ValidationError):
+            AnalystInput(
+                task="test",
+                context={},
+                retrieved_chunks=[{"garbage": "data"}]  # type: ignore
+            )
