@@ -4,7 +4,7 @@ All agents extend these for consistent validation.
 """
 
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Dict, Any
+from typing import Dict
 
 
 class AgentInput(BaseModel):
@@ -16,9 +16,9 @@ class AgentInput(BaseModel):
     model_config = ConfigDict(extra="forbid")  # Reject unknown fields — non-negotiable
 
     task: str = Field(..., description="The task this agent should perform")
-    context: Dict[str, Any] = Field(
+    context: Dict[str, str] = Field(
         default_factory=dict,
-        description="Additional context for task execution"
+        description="String-keyed string-valued context for task execution"
     )
 
 
@@ -30,9 +30,9 @@ class AgentOutput(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    result: Dict[str, Any] = Field(
+    result: Dict[str, str] = Field(
         default_factory=dict,
-        description="Agent execution result"
+        description="String-keyed string-valued execution result"
     )
     confidence: float = Field(
         ...,
