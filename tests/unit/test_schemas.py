@@ -6,6 +6,7 @@ Validates that schema validation works correctly at all boundaries.
 import pytest
 from pydantic import ValidationError
 from consilium.schemas.agent import AgentInput, AgentOutput
+from consilium.schemas.state import WorkflowState
 from consilium.schemas.workflow import WorkflowRequest, WorkflowResponse, WorkflowResult
 
 
@@ -75,3 +76,42 @@ class TestWorkflowSchemas:
                 agents_invoked=[],
                 unknown_field="injected"  # type: ignore
             )
+
+
+class TestWorkflowState:
+
+    def test_partial_state_with_user_query(self) -> None:
+        """WorkflowState (total=False) allows partial construction."""
+        state: WorkflowState = {"user_query": "Test query", "current_agent": "planner"}
+        assert state["user_query"] == "Test query"
+
+    def test_partial_state_with_error(self) -> None:
+        """Error-only partial state is valid."""
+        state: WorkflowState = {"error": "LLM timeout", "agent_history": ["planner"]}
+        assert state["error"] == "LLM timeout"
+
+    def test_state_accepts_task_plan_dicts(self) -> None:
+        """task_plan accepts List[Dict[str, Any]] (SubTask serialized)."""
+        state: WorkflowState = {
+            "user_query": "Assess compliance",
+            "task_plan": [
+                {"task_id": "task_1", "description": "Analyze docs", "assigned_agent": "analyst", "dependencies": []}
+            ],
+            "agent_history": ["planner"],
+        }
+        assert state["task_plan"] is not None
+        assert state["task_plan"][0]["task_id"] == "task_1"
+
+    def test_state_accepts_full_pipeline_output(self) -> None:
+        """Full state with all agent outputs is valid."""
+        state: WorkflowState = {
+            "user_query": "Test",
+            "task_plan": [{"task_id": "task_1", "description": "x", "assigned_agent": "analyst", "dependencies": []}],
+            "retrieved_chunks": [{"chunk_text": "text", "metadata": {}, "score": 0.9}],
+            "risk_findings": [{"clause_reference": "IFRS 15", "risk_level": "High", "finding": "issue"}],
+            "final_report": "# Report\n\nContent",
+            "current_agent": "synthesizer",
+            "agent_history": ["planner", "analyst", "synthesizer"],
+            "error": None,
+        }
+        assert state["agent_history"] == ["planner", "analyst", "synthesizer"]
