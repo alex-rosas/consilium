@@ -19,10 +19,14 @@ from typing import List, Optional
 
 import httpx
 from fastapi import HTTPException
+from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from consilium.integrations.retrieval_mock import MockRetrieval, RetrievalResult
 
 logger = logging.getLogger(__name__)
+
+# Retry configuration — override in tests with wait_none() via monkeypatch
+_QUAESTOR_RETRY_WAIT = wait_exponential(multiplier=0.5, min=0.5, max=2.0)
 
 
 class QuaestorClient:
@@ -71,13 +75,20 @@ class QuaestorClient:
             payload["document_filter"] = document_filter
 
         try:
-            response = await self._client.post(
-                f"{self.base_url}/retrieve",
-                json=payload,
-            )
-            response.raise_for_status()
-            data = response.json()
-            return [RetrievalResult.model_validate(r) for r in data.get("results", [])]
+            async for attempt in AsyncRetrying(
+                stop=stop_after_attempt(2),
+                wait=_QUAESTOR_RETRY_WAIT,
+                retry=retry_if_exception_type(httpx.RequestError),
+                reraise=True,
+            ):
+                with attempt:
+                    response = await self._client.post(
+                        f"{self.base_url}/retrieve",
+                        json=payload,
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    return [RetrievalResult.model_validate(r) for r in data.get("results", [])]
 
         except (httpx.RequestError, httpx.HTTPStatusError) as exc:
             if settings.allow_mock_fallback:

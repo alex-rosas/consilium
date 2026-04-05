@@ -15,11 +15,15 @@ from typing import List
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from consilium.agents.base import BaseAgent
 from consilium.schemas.agent import AgentInput, AgentOutput
 
 logger = logging.getLogger(__name__)
+
+# Retry configuration — override in tests with wait_none() via monkeypatch
+_LLM_RETRY_WAIT = wait_exponential(multiplier=0.5, min=0.5, max=4.0)
 
 
 # ---------------------------------------------------------------------------
@@ -104,9 +108,17 @@ class PlannerAgent(BaseAgent[PlannerInput, PlannerOutput]):
         sys_msg, user_msg = self._build_prompt(input.user_query)
 
         try:
-            response = await self.llm.ainvoke([sys_msg, user_msg])
-            raw_text = response.content  # AIMessage.content is the string
-            task_plan = self._parse_llm_response(raw_text)
+            async for attempt in AsyncRetrying(
+                stop=stop_after_attempt(3),
+                wait=_LLM_RETRY_WAIT,
+                retry=retry_if_exception_type(Exception),
+                reraise=True,
+            ):
+                with attempt:
+                    response = await self.llm.ainvoke([sys_msg, user_msg])
+                    raw_text = response.content  # AIMessage.content is the string
+                    task_plan = self._parse_llm_response(raw_text)
+
             return PlannerOutput(
                 task_plan=task_plan,
                 result={"plan_summary": self._summarize_plan(task_plan)},
@@ -115,7 +127,7 @@ class PlannerAgent(BaseAgent[PlannerInput, PlannerOutput]):
             )
 
         except Exception as exc:
-            logger.warning("PlannerAgent LLM call failed, using fallback plan: %s", exc)
+            logger.warning("PlannerAgent LLM call failed after retries, using fallback plan: %s", exc)
             return self._fallback_plan(input.user_query, str(exc))
 
     # ------------------------------------------------------------------
