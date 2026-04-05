@@ -164,10 +164,20 @@ class WorkflowGraph:
             raw_chunks: List[Dict[str, Any]] = state.get("retrieved_chunks") or []
             retrieved_chunks = [RetrievalResult.model_validate(c) for c in raw_chunks]
 
+            # Build task context string from Planner output (may be None if Planner failed)
+            task_plan_dicts: List[Dict[str, Any]] = state.get("task_plan") or []
+            task_context: str | None = None
+            if task_plan_dicts:
+                task_context = "\n".join(
+                    f"{t.get('task_id', '?')}: {t.get('description', '')}"
+                    for t in task_plan_dicts
+                )
+
             analyst_input = AnalystInput(
                 task="Classify compliance risk for the retrieved document chunks",
                 context={},
                 retrieved_chunks=retrieved_chunks,
+                task_context=task_context,
             )
             output = await self._analyst.execute(analyst_input)
 

@@ -15,6 +15,7 @@ from typing import List, Literal
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from pydantic import ConfigDict, Field
+from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from consilium.agents.base import BaseAgent
 from consilium.integrations.retrieval_mock import RetrievalResult
@@ -22,6 +23,9 @@ from consilium.schemas.agent import AgentInput, AgentOutput
 from consilium.schemas.findings import ComplianceFinding
 
 logger = logging.getLogger(__name__)
+
+# Retry configuration — override in tests with wait_none() via monkeypatch
+_LLM_RETRY_WAIT = wait_exponential(multiplier=0.5, min=0.5, max=4.0)
 
 
 # ---------------------------------------------------------------------------
@@ -114,9 +118,16 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
         sys_msg, user_msg = self._build_prompt(chunks, task_context=input.task_context)
 
         try:
-            response = await self.llm.ainvoke([sys_msg, user_msg])
-            raw_text = response.content  # AIMessage.content is the string
-            findings = self._parse_llm_response(raw_text)
+            async for attempt in AsyncRetrying(
+                stop=stop_after_attempt(3),
+                wait=_LLM_RETRY_WAIT,
+                retry=retry_if_exception_type(Exception),
+                reraise=True,
+            ):
+                with attempt:
+                    response = await self.llm.ainvoke([sys_msg, user_msg])
+                    raw_text = response.content  # AIMessage.content is the string
+                    findings = self._parse_llm_response(raw_text)
 
             logger.info("AnalystAgent LLM produced %d finding(s)", len(findings))
             return AnalystOutput(
@@ -127,7 +138,7 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
             )
 
         except Exception as exc:
-            logger.warning("AnalystAgent LLM failed, using rule-based fallback: %s", exc)
+            logger.warning("AnalystAgent LLM failed after retries, using rule-based fallback: %s", exc)
             return self._fallback_findings(chunks, str(exc))
 
     # ------------------------------------------------------------------
