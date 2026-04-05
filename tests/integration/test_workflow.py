@@ -15,6 +15,7 @@ from typing import Any, Dict, List
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from langchain_core.messages import AIMessage
 
 from consilium.integrations.retrieval_mock import MockRetrieval
 from consilium.workflow.graph import WorkflowGraph
@@ -46,12 +47,16 @@ def _make_planner_llm_response(tasks: List[Dict[str, Any]] | None = None) -> str
 
 
 def _patch_planner_llm(workflow: WorkflowGraph, response: str | Exception) -> None:
-    """Replace the LLM on the PlannerAgent inside a WorkflowGraph."""
+    """Replace the LLM on the PlannerAgent inside a WorkflowGraph.
+
+    ChatOllama.ainvoke() returns AIMessage — mock wraps string responses
+    in AIMessage(content=...) to match the real interface.
+    """
     mock_llm = MagicMock()
     if isinstance(response, Exception):
         mock_llm.ainvoke = AsyncMock(side_effect=response)
     else:
-        mock_llm.ainvoke = AsyncMock(return_value=response)
+        mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content=response))
     workflow._planner.llm = mock_llm  # type: ignore[attr-defined]
 
 

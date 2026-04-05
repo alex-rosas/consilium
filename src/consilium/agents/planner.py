@@ -2,6 +2,7 @@
 PlannerAgent: Decomposes user queries into max 3 sub-tasks.
 
 Phase 1: Makes the first real LLM call (Ollama, Llama 3.1 8B).
+Phase 2: Switched to ChatOllama (chat interface) for reliable structured JSON output.
 Falls back to a single-task plan if the LLM call fails.
 """
 
@@ -11,6 +12,8 @@ import json
 import logging
 from typing import List
 
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_ollama import ChatOllama
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from consilium.agents.base import BaseAgent
@@ -79,11 +82,9 @@ class PlannerAgent(BaseAgent[PlannerInput, PlannerOutput]):
     """
 
     def __init__(self) -> None:
-        from langchain_ollama import OllamaLLM
-
         from consilium.config import settings
 
-        self.llm = OllamaLLM(
+        self.llm = ChatOllama(
             base_url=settings.ollama_base_url,
             model=settings.ollama_model,
             temperature=0.0,  # Deterministic for task planning
@@ -97,14 +98,15 @@ class PlannerAgent(BaseAgent[PlannerInput, PlannerOutput]):
         """
         Decompose user query into sub-tasks.
 
-        Calls Ollama LLM with a structured JSON prompt.
+        Calls ChatOllama with a system/user message pair for reliable JSON output.
         Falls back to single-task plan if LLM fails.
         """
-        prompt = self._build_prompt(input.user_query)
+        sys_msg, user_msg = self._build_prompt(input.user_query)
 
         try:
-            response = await self.llm.ainvoke(prompt)
-            task_plan = self._parse_llm_response(response)
+            response = await self.llm.ainvoke([sys_msg, user_msg])
+            raw_text = response.content  # AIMessage.content is the string
+            task_plan = self._parse_llm_response(raw_text)
             return PlannerOutput(
                 task_plan=task_plan,
                 result={"plan_summary": self._summarize_plan(task_plan)},
@@ -120,26 +122,27 @@ class PlannerAgent(BaseAgent[PlannerInput, PlannerOutput]):
     # Private helpers
     # ------------------------------------------------------------------
 
-    def _build_prompt(self, user_query: str) -> str:
-        return f"""You are a task planner for compliance automation.
+    def _build_prompt(self, user_query: str) -> tuple[SystemMessage, HumanMessage]:
+        """Return (SystemMessage, HumanMessage) for ChatOllama.ainvoke().
 
-User query: {user_query}
-
-Decompose this query into 1-3 sub-tasks for a multi-agent system.
-
-Available agent capabilities:
-- "analyst": Retrieve and analyze compliance documents, classify risk
-- "synthesizer": Aggregate findings into a structured report
-
-Rules:
-- Output ONLY valid JSON — no markdown fences, no explanation
-- Maximum 3 tasks
-- Each task: {{"task_id": "task_N", "description": "...", "assigned_agent": "analyst|synthesizer", "dependencies": []}}
-- task_id format: "task_1", "task_2", "task_3"
-- Dependencies must reference task_ids defined in the same array
-- Most queries need 2 tasks: one analyst, one synthesizer
-
-Output JSON array:"""
+        System/user separation gives llama3.1:8b better role context and
+        produces more reliable structured JSON output than a single string prompt.
+        """
+        system_content = (
+            "You are a task planner for compliance automation.\n"
+            "Output ONLY a valid JSON array — no markdown fences, no explanation.\n"
+            "Schema: "
+            '[{"task_id": "task_N", "description": "...", '
+            '"assigned_agent": "analyst|synthesizer", "dependencies": []}]\n'
+            "Rules:\n"
+            "- Maximum 3 tasks\n"
+            "- task_id format: task_1, task_2, task_3\n"
+            "- Dependencies must reference task_ids in the same array\n"
+            "- Available agents: analyst (risk analysis), synthesizer (report generation)\n"
+            "- Most queries need 2 tasks: one analyst, one synthesizer"
+        )
+        user_content = f"Query: {user_query}"
+        return SystemMessage(content=system_content), HumanMessage(content=user_content)
 
     def _parse_llm_response(self, response: str) -> List[SubTask]:
         """

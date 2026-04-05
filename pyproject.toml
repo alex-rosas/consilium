@@ -39,6 +39,9 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+markers = [
+    "integration: mark test as requiring external dependencies (Ollama, Quaestor)",
+]
 
 [tool.black]
 line-length = 100

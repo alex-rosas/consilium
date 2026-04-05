@@ -2,24 +2,30 @@
 Unit tests for PlannerAgent logic.
 
 All LLM calls are mocked — no Ollama required.
+ChatOllama.ainvoke() returns an AIMessage; mocks reflect this.
 """
 
 import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from langchain_core.messages import AIMessage
 
 from consilium.agents.planner import PlannerAgent, PlannerInput
 
 
 def _make_agent_with_mock_llm(llm_response: str | Exception) -> PlannerAgent:
-    """Build a PlannerAgent whose LLM is replaced with a mock."""
+    """Build a PlannerAgent whose LLM is replaced with a mock.
+
+    ChatOllama.ainvoke() returns AIMessage — mock returns AIMessage(content=...)
+    so that execute() can call response.content correctly.
+    """
     agent = PlannerAgent.__new__(PlannerAgent)  # skip __init__ (avoids Ollama connection)
     mock_llm = MagicMock()
     if isinstance(llm_response, Exception):
         mock_llm.ainvoke = AsyncMock(side_effect=llm_response)
     else:
-        mock_llm.ainvoke = AsyncMock(return_value=llm_response)
+        mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content=llm_response))
     agent.llm = mock_llm
     return agent
 
