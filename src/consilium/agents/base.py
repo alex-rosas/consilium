@@ -1,14 +1,25 @@
 """
 Base agent interface.
-All agents inherit from BaseAgent and must implement execute() and capabilities.
+All agents inherit from BaseAgent[I, O] and must implement execute() and capabilities.
+
+Generic parameters:
+    I: Agent-specific input type (subclass of AgentInput)
+    O: Agent-specific output type (subclass of AgentOutput)
+
+This avoids the Liskov substitution violation that occurs when a subclass
+narrows the execute() signature relative to the base class.
 """
 
 from abc import ABC, abstractmethod
+from typing import Generic, List, TypeVar
+
 from consilium.schemas.agent import AgentInput, AgentOutput
-from typing import List
+
+I = TypeVar("I", bound=AgentInput)
+O = TypeVar("O", bound=AgentOutput)
 
 
-class BaseAgent(ABC):
+class BaseAgent(ABC, Generic[I, O]):
     """
     Abstract base class for all Consilium agents.
 
@@ -19,20 +30,20 @@ class BaseAgent(ABC):
     """
 
     @abstractmethod
-    async def execute(self, input: AgentInput) -> AgentOutput:
+    async def execute(self, input: I) -> O:
         """
         Execute agent task with schema validation.
 
         Args:
-            input: Validated agent input (Pydantic model)
+            input: Validated agent-specific input (subclass of AgentInput)
 
         Returns:
-            Validated agent output (Pydantic model)
+            Validated agent-specific output (subclass of AgentOutput)
 
         Raises:
             ValidationError: If input or output schema is violated
         """
-        pass
+        ...
 
     @property
     @abstractmethod
@@ -44,7 +55,7 @@ class BaseAgent(ABC):
         Returns:
             List of capability strings, e.g. ["risk_classification", "compliance_analysis"]
         """
-        pass
+        ...
 
     @property
     def name(self) -> str:

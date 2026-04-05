@@ -30,7 +30,7 @@ class AnalystOutput(AgentOutput):
     )
 
 
-class AnalystAgent(BaseAgent):
+class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
     """
     Risk classification agent.
 
@@ -48,7 +48,7 @@ class AnalystAgent(BaseAgent):
     def capabilities(self) -> List[str]:
         return ["risk_classification", "compliance_analysis", "regulatory_assessment"]
 
-    async def execute(self, input: AnalystInput) -> AnalystOutput:  # type: ignore[override]  # TODO(phase1): make BaseAgent generic[I, O] to remove this suppress
+    async def execute(self, input: AnalystInput) -> AnalystOutput:
         """
         Analyze document chunks and classify compliance risks.
 
