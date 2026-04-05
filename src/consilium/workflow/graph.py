@@ -22,9 +22,10 @@ from langgraph.graph import END, StateGraph
 
 from consilium.agents.analyst import AnalystAgent, AnalystInput
 from consilium.agents.planner import PlannerAgent, PlannerInput
-from consilium.agents.synthesizer import RiskFinding, SynthesizerAgent, SynthesizerInput
+from consilium.agents.synthesizer import SynthesizerAgent, SynthesizerInput
 from consilium.guardrails.input import InputGuardrails
 from consilium.integrations.retrieval_mock import RetrievalResult
+from consilium.schemas.findings import ComplianceFinding
 from consilium.schemas.state import WorkflowState
 from consilium.workflow.router import route_after_analyst, route_after_planner
 
@@ -170,9 +171,9 @@ class WorkflowGraph:
             )
             output = await self._analyst.execute(analyst_input)
 
-            # AnalystOutput.risk_findings is List[Dict[str, str]] — keep as-is
+            # AnalystOutput.risk_findings is List[ComplianceFinding] — serialise to dicts
             risk_findings: List[Dict[str, Any]] = [
-                dict(f) for f in output.risk_findings
+                f.model_dump() for f in output.risk_findings
             ]
 
             logger.info("AnalystAgent produced %d finding(s)", len(risk_findings))
@@ -195,7 +196,7 @@ class WorkflowGraph:
         """
         Run SynthesizerAgent.
 
-        Reads risk_findings from state and converts them to RiskFinding models.
+        Reads risk_findings from state and validates them as ComplianceFinding models.
         Writes final_report to state.
         """
         history: List[str] = list(state.get("agent_history") or [])
@@ -203,17 +204,8 @@ class WorkflowGraph:
         try:
             raw_findings: List[Dict[str, Any]] = state.get("risk_findings") or []
 
-            # AnalystAgent produces {clause, risk_level, evidence, document}.
-            # SynthesizerAgent expects {clause_reference, risk_level, finding}.
-            # Map between the two schemas at this boundary.
-            risk_findings = [
-                RiskFinding(
-                    clause_reference=f.get("clause", f.get("clause_reference", "Unknown")),
-                    risk_level=f.get("risk_level", "N/A"),
-                    finding=f.get("evidence", f.get("finding", "No detail provided"))[:500],
-                )
-                for f in raw_findings
-            ]
+            # Both Analyst and Synthesizer use ComplianceFinding — direct pass-through.
+            risk_findings = [ComplianceFinding.model_validate(f) for f in raw_findings]
 
             synthesizer_input = SynthesizerInput(
                 task="Aggregate risk findings into a structured compliance report",

@@ -2,31 +2,41 @@
 Analyst agent: Risk classification and compliance analysis.
 
 Phase 0: Rule-based keyword classification (validates contract pattern)
-Phase 1+: LLM-powered analysis via Ollama
+Phase 2: risk_findings now typed as List[ComplianceFinding] — unified schema with Synthesizer.
+Phase 2+: LLM-powered analysis via Ollama (Task 4).
 """
 
+from __future__ import annotations
+
+from typing import List
+
+from pydantic import ConfigDict, Field
+
 from consilium.agents.base import BaseAgent
-from consilium.schemas.agent import AgentInput, AgentOutput
 from consilium.integrations.retrieval_mock import RetrievalResult
-from pydantic import Field
-from typing import List, Dict
+from consilium.schemas.agent import AgentInput, AgentOutput
+from consilium.schemas.findings import ComplianceFinding
 
 
 class AnalystInput(AgentInput):
     """Analyst-specific input — extends base with retrieved chunks."""
 
+    model_config = ConfigDict(extra="forbid")
+
     retrieved_chunks: List[RetrievalResult] = Field(
         ...,
-        description="Retrieved document chunks to analyze"
+        description="Retrieved document chunks to analyze",
     )
 
 
 class AnalystOutput(AgentOutput):
     """Analyst-specific output — extends base with risk findings."""
 
-    risk_findings: List[Dict[str, str]] = Field(
+    model_config = ConfigDict(extra="forbid")
+
+    risk_findings: List[ComplianceFinding] = Field(
         default_factory=list,
-        description="Risk classifications per document chunk"
+        description="Risk classifications per document chunk",
     )
 
 
@@ -59,17 +69,19 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
             AnalystOutput with per-chunk risk classifications
         """
         chunks = input.retrieved_chunks
-        risk_findings = []
+        risk_findings: List[ComplianceFinding] = []
 
         for chunk in chunks:
             risk_level = self._classify_risk(chunk.chunk_text)
 
-            risk_findings.append({
-                "clause": chunk.metadata.get("section", "Unknown"),
-                "risk_level": risk_level,
-                "evidence": chunk.chunk_text[:100] + "...",
-                "document": chunk.metadata.get("document", "Unknown")
-            })
+            risk_findings.append(
+                ComplianceFinding(
+                    clause_reference=chunk.metadata.get("section", "Unknown"),
+                    risk_level=risk_level,
+                    finding=chunk.chunk_text[:100] + "...",
+                    document_source=chunk.metadata.get("document", "Unknown"),
+                )
+            )
 
         confidence = 0.75  # Fixed placeholder for Phase 0 rule-based classification
 

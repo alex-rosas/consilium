@@ -1,56 +1,74 @@
 """
-Unit tests for SynthesizerAgent schemas: RiskFinding, SynthesizerInput, SynthesizerOutput.
+Unit tests for SynthesizerAgent schemas: ComplianceFinding, SynthesizerInput, SynthesizerOutput.
+
+Phase 2: RiskFinding replaced by ComplianceFinding (shared domain model).
+Imports from consilium.schemas.findings, not consilium.agents.synthesizer.
 """
 
 import pytest
 from pydantic import ValidationError
 
-from consilium.agents.synthesizer import RiskFinding, SynthesizerInput, SynthesizerOutput
+from consilium.agents.synthesizer import SynthesizerInput, SynthesizerOutput
+from consilium.schemas.findings import ComplianceFinding
 
 
-class TestRiskFindingSchema:
-    def test_valid_risk_finding(self) -> None:
-        """RiskFinding accepts all required fields."""
-        finding = RiskFinding(
+class TestComplianceFindingInSynthesizer:
+    """ComplianceFinding is the domain model used by SynthesizerInput."""
+
+    def _make_finding(self) -> ComplianceFinding:
+        return ComplianceFinding(
             clause_reference="IFRS 15 §31",
-            risk_level="High",
-            finding="Revenue recognition timing issue identified in Q3 report",
+            risk_level="Medium",
+            finding="Revenue recognition timing issue identified",
+            document_source="JPMorgan 10-K Q3 2023",
         )
-        assert finding.clause_reference == "IFRS 15 §31"
-        assert finding.risk_level == "High"
 
-    def test_risk_finding_rejects_extra_fields(self) -> None:
+    def test_valid_finding_accepted(self) -> None:
+        """ComplianceFinding accepts all required fields."""
+        f = self._make_finding()
+        assert f.clause_reference == "IFRS 15 §31"
+        assert f.risk_level == "Medium"
+
+    def test_finding_rejects_extra_fields(self) -> None:
         """extra='forbid' prevents unknown keys."""
         with pytest.raises(ValidationError):
-            RiskFinding(
+            ComplianceFinding(
                 clause_reference="IFRS 15",
                 risk_level="Low",
                 finding="Some finding text here",
+                document_source="JPMorgan 10-K",
                 extra_key="nope",
             )
 
-    def test_risk_finding_min_length_enforced(self) -> None:
+    def test_finding_min_length_enforced(self) -> None:
         """finding must be at least 10 characters."""
         with pytest.raises(ValidationError):
-            RiskFinding(clause_reference="IFRS 15", risk_level="Low", finding="short")
+            ComplianceFinding(
+                clause_reference="IFRS 15",
+                risk_level="Low",
+                finding="short",
+                document_source="JPMorgan 10-K",
+            )
 
     def test_all_risk_levels_accepted(self) -> None:
         """High, Medium, Low, and N/A are all valid risk levels."""
         for level in ("High", "Medium", "Low", "N/A"):
-            f = RiskFinding(
+            f = ComplianceFinding(
                 clause_reference="Test §1",
-                risk_level=level,
+                risk_level=level,  # type: ignore[arg-type]
                 finding="Finding text that is long enough",
+                document_source="Test Document",
             )
             assert f.risk_level == level
 
 
 class TestSynthesizerInputSchema:
-    def _make_finding(self) -> RiskFinding:
-        return RiskFinding(
+    def _make_finding(self) -> ComplianceFinding:
+        return ComplianceFinding(
             clause_reference="IFRS 15 §31",
             risk_level="Medium",
             finding="Revenue recognition timing issue",
+            document_source="JPMorgan 10-K",
         )
 
     def test_valid_synthesizer_input(self) -> None:

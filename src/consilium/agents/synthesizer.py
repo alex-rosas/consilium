@@ -2,6 +2,7 @@
 SynthesizerAgent: Aggregates risk findings into a structured compliance report.
 
 Phase 1: Rule-based report generation (no LLM).
+Phase 2: Uses ComplianceFinding shared schema — ComplianceFinding removed.
 Phase 2+: Can be enhanced with LLM-based narrative synthesis.
 """
 
@@ -9,10 +10,11 @@ from __future__ import annotations
 
 from typing import Dict, List
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 from consilium.agents.base import BaseAgent
 from consilium.schemas.agent import AgentInput, AgentOutput
+from consilium.schemas.findings import ComplianceFinding
 
 
 # ---------------------------------------------------------------------------
@@ -20,26 +22,12 @@ from consilium.schemas.agent import AgentInput, AgentOutput
 # ---------------------------------------------------------------------------
 
 
-class RiskFinding(BaseModel):
-    """
-    Single risk finding produced by AnalystAgent.
-
-    Domain object embedded inside SynthesizerInput — not an agent I/O schema itself.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    clause_reference: str = Field(..., description="Regulation clause (e.g., IFRS 15 §31)")
-    risk_level: str = Field(..., description="High | Medium | Low | N/A")
-    finding: str = Field(..., min_length=10, max_length=1000)
-
-
 class SynthesizerInput(AgentInput):
     """Input for the SynthesizerAgent."""
 
     model_config = ConfigDict(extra="forbid")
 
-    risk_findings: List[RiskFinding] = Field(..., min_length=1)
+    risk_findings: List[ComplianceFinding] = Field(..., min_length=1)
     original_query: str = Field(..., min_length=10, max_length=1000)
 
 
@@ -119,9 +107,9 @@ class SynthesizerAgent(BaseAgent[SynthesizerInput, SynthesizerOutput]):
     # ------------------------------------------------------------------
 
     def _group_by_risk_level(
-        self, findings: List[RiskFinding]
-    ) -> Dict[str, List[RiskFinding]]:
-        groups: Dict[str, List[RiskFinding]] = {
+        self, findings: List[ComplianceFinding]
+    ) -> Dict[str, List[ComplianceFinding]]:
+        groups: Dict[str, List[ComplianceFinding]] = {
             "High": [],
             "Medium": [],
             "Low": [],
@@ -132,7 +120,7 @@ class SynthesizerAgent(BaseAgent[SynthesizerInput, SynthesizerOutput]):
             groups[bucket].append(f)
         return groups
 
-    def _create_summary(self, findings: List[RiskFinding]) -> str:
+    def _create_summary(self, findings: List[ComplianceFinding]) -> str:
         high_count = sum(1 for f in findings if f.risk_level == "High")
         if high_count > 0:
             return f"Identified {high_count} high-risk compliance issue(s) requiring immediate attention."

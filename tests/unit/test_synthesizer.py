@@ -1,22 +1,31 @@
 """
 Unit tests for SynthesizerAgent logic (rule-based, no LLM).
+
+Phase 2: Uses ComplianceFinding (shared domain model) instead of RiskFinding.
 """
 
 import pytest
 
-from consilium.agents.synthesizer import RiskFinding, SynthesizerAgent, SynthesizerInput
+from consilium.agents.synthesizer import SynthesizerAgent, SynthesizerInput
+from consilium.schemas.findings import ComplianceFinding
 
 
 def _make_finding(
     clause: str = "IFRS 15 §31",
     risk_level: str = "High",
     finding: str = "Revenue recognition timing issue identified",
-) -> RiskFinding:
-    return RiskFinding(clause_reference=clause, risk_level=risk_level, finding=finding)
+    document_source: str = "JPMorgan 10-K Q3 2023",
+) -> ComplianceFinding:
+    return ComplianceFinding(
+        clause_reference=clause,
+        risk_level=risk_level,  # type: ignore[arg-type]
+        finding=finding,
+        document_source=document_source,
+    )
 
 
 def _make_input(
-    findings: list[RiskFinding],
+    findings: list[ComplianceFinding],
     query: str = "Assess compliance",
 ) -> SynthesizerInput:
     return SynthesizerInput(

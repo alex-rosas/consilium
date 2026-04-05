@@ -1,11 +1,14 @@
 """
 Unit tests for Analyst agent.
 Validates execution, schema compliance, and classification logic.
+
+Phase 2: risk_findings is now List[ComplianceFinding] — assert on typed fields.
 """
 
 import pytest
 from pydantic import ValidationError
 from consilium.agents.analyst import AnalystAgent, AnalystInput
+from consilium.schemas.findings import ComplianceFinding
 
 
 @pytest.mark.asyncio
@@ -28,6 +31,12 @@ class TestAnalystAgent:
         assert 0.0 <= output.confidence <= 1.0
         assert output.reasoning != ""
         assert len(output.risk_findings) > 0
+        # Phase 2: risk_findings are ComplianceFinding objects
+        finding = output.risk_findings[0]
+        assert isinstance(finding, ComplianceFinding)
+        assert finding.clause_reference != ""
+        assert finding.risk_level in ("High", "Medium", "Low", "N/A")
+        assert finding.document_source != ""
 
     async def test_capabilities_declared(self) -> None:
         agent = AnalystAgent()
