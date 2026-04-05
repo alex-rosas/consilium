@@ -26,6 +26,16 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8001
 
+    # Quaestor Integration (Phase 2+)
+    quaestor_base_url: str = "http://localhost:8000"
+    # Controls which retrieval backend is used:
+    #   "mock"     → MockRetrieval (deterministic, no external dependency)
+    #   "quaestor" → QuaestorClient (real HTTP calls to Quaestor service)
+    retrieval_provider: Literal["mock", "quaestor"] = "mock"
+    # When True: QuaestorClient connection errors fall back to MockRetrieval (dev mode)
+    # When False (default): connection errors raise HTTP 503 (production correctness)
+    allow_mock_fallback: bool = False
+
     # Logging
     log_level: str = "INFO"
 
