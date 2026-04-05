@@ -1,0 +1,34 @@
+services:
+  consilium-api:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      # LLM — Ollama must be running on the host
+      - LLM_PROVIDER=ollama
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3.1:8b
+      # Retrieval — set to "quaestor" once Quaestor is running
+      - RETRIEVAL_PROVIDER=mock
+      # Quaestor runs as an independent service on the host (separate repo)
+      - QUAESTOR_BASE_URL=http://host.docker.internal:8000
+      # Set to "true" only in development to fall back to mock when Quaestor is down
+      - ALLOW_MOCK_FALLBACK=false
+      # API
+      - API_HOST=0.0.0.0
+      - API_PORT=8001
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+# NOTE: Quaestor is NOT included here intentionally.
+# Quaestor is an independent service (separate repo, separate compose file).
+# To use real retrieval:
+#   1. Start Quaestor: cd ../quaestor && docker-compose up
+#   2. Set RETRIEVAL_PROVIDER=quaestor above
+# Phase 5 will add observability services (Arize Phoenix, OpenTelemetry).
