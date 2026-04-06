@@ -78,6 +78,7 @@ class CaseResult:
     skipped: bool = False
     skip_reason: Optional[str] = None
     error: Optional[str] = None
+    full_response: Optional[dict] = None
 
 
 @dataclass
@@ -207,6 +208,7 @@ async def run_case(
     api_url: str,
     case: GoldenCase,
     quaestor_reachable: bool,
+    store_responses: bool = False,
 ) -> CaseResult:
     """Run a single golden case against the API and return a CaseResult."""
     if case.requires_retrieval and not quaestor_reachable:
@@ -286,6 +288,7 @@ async def run_case(
             risk_levels_found=risk_levels,
             report_structure_valid=report_structure_valid,
             failure_mode=failure_mode,
+            full_response=data if store_responses else None,
         )
 
     except httpx.TimeoutException:
@@ -378,9 +381,9 @@ def compute_metrics(results: List[CaseResult]) -> EvalMetrics:
 # ---------------------------------------------------------------------------
 
 
-async def main(api_url: str, phase: str) -> None:
+async def main(api_url: str, phase: str, store_responses: bool = False) -> None:
     logger.info("=== Consilium Evaluation Runner ===")
-    logger.info("API: %s | Phase: %s | Golden: %s", api_url, phase, GOLDEN_PATH)
+    logger.info("API: %s | Phase: %s | Golden: %s | store_responses: %s", api_url, phase, GOLDEN_PATH, store_responses)
 
     # Load golden dataset
     with open(GOLDEN_PATH) as f:
@@ -396,7 +399,7 @@ async def main(api_url: str, phase: str) -> None:
     results: List[CaseResult] = []
     async with httpx.AsyncClient() as client:
         for case in cases:
-            result = await run_case(client, api_url, case, quaestor_reachable)
+            result = await run_case(client, api_url, case, quaestor_reachable, store_responses=store_responses)
             results.append(result)
 
     # Compute metrics
@@ -449,6 +452,7 @@ async def main(api_url: str, phase: str) -> None:
         "phase": phase,
         "api_url": api_url,
         "quaestor_reachable": quaestor_reachable,
+        "store_responses": store_responses,
         "gate_passed": gate_passed,
         "metrics": asdict(metrics),
         "cases": [asdict(r) for r in results],
@@ -475,5 +479,11 @@ if __name__ == "__main__":
         default="phase2_baseline",
         help="Label for this run (used in output filename)",
     )
+    parser.add_argument(
+        "--store-responses",
+        action="store_true",
+        default=False,
+        help="Store full API response body (findings text, report) per case in results JSON",
+    )
     args = parser.parse_args()
-    asyncio.run(main(api_url=args.api_url, phase=args.phase))
+    asyncio.run(main(api_url=args.api_url, phase=args.phase, store_responses=args.store_responses))
