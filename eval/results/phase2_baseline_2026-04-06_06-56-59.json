@@ -1,0 +1,458 @@
+{
+  "timestamp": "2026-04-06T06:56:59.531082+00:00",
+  "phase": "phase2_baseline",
+  "api_url": "http://localhost:8001",
+  "quaestor_reachable": false,
+  "gate_passed": false,
+  "metrics": {
+    "task_completion_rate": 1.0,
+    "fallback_activation_rate": 0.0,
+    "planner_fallback_rate": 0.0,
+    "analyst_fallback_rate": 0.0,
+    "synthesizer_fallback_rate": 0.0,
+    "p95_latency_ms": 88671.6,
+    "p50_latency_ms": 67666,
+    "mean_latency_ms": 69676.53333333334,
+    "report_structure_pass_rate": 1.0,
+    "cases_run": 15,
+    "cases_skipped": 5,
+    "cases_succeeded": 15,
+    "cases_failed": 0,
+    "failure_mode_counts": {}
+  },
+  "cases": [
+    {
+      "id": "rev-001",
+      "query": "What are the revenue recognition compliance risks for JPMorgan Q3 2023 under IFRS 15?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 65954,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 3,
+      "risk_levels_found": [
+        "Medium",
+        "High",
+        "Low"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "rev-002",
+      "query": "Does JPMorgan's Q3 2023 performance obligation disclosure comply with IFRS 15.31 requirements?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 63027,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 3,
+      "risk_levels_found": [
+        "Medium",
+        "High",
+        "Low"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "rev-003",
+      "query": "Assess whether variable consideration estimates in JPMorgan's revenue disclosures meet IFRS 15 constraints.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 67931,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 3,
+      "risk_levels_found": [
+        "Medium",
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "rev-004",
+      "query": "Review JPMorgan Q3 2023 contract identification practices under the IFRS 15 five-step model.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 60164,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 2,
+      "risk_levels_found": [
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "rev-005",
+      "query": "What revenue recognition risks exist in JPMorgan investment banking fee disclosures for Q3 2023?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 62412,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 2,
+      "risk_levels_found": [
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "rev-006",
+      "query": "Evaluate the completeness of performance obligation disclosures in JPMorgan's Q3 2023 10-Q filing.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 78936,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 3,
+      "risk_levels_found": [
+        "Medium",
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "rev-007",
+      "query": "Analyze IFRS 15 transaction price allocation compliance in financial services revenue reporting.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 76137,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 3,
+      "risk_levels_found": [
+        "Medium",
+        "N/A",
+        "Medium"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "rev-008",
+      "query": "What are the risk implications of JPMorgan's revenue growth in Q3 2023 from a compliance perspective?",
+      "success": false,
+      "confidence": 0.0,
+      "latency_ms": 0,
+      "agents_invoked": [],
+      "fallback_events": [],
+      "findings_count": 0,
+      "risk_levels_found": [],
+      "report_structure_valid": false,
+      "failure_mode": null,
+      "skipped": true,
+      "skip_reason": "requires_retrieval=true but Quaestor unreachable",
+      "error": null
+    },
+    {
+      "id": "rev-009",
+      "query": "Identify potential misstatement risks in JPMorgan's Q3 2023 revenue recognition from IFRS 15 step-2 perspective.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 62335,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 2,
+      "risk_levels_found": [
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "rev-010",
+      "query": "Review JPMorgan's Q3 2023 revenue recognition policies for alignment with IFRS 15 timing requirements.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 67666,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 2,
+      "risk_levels_found": [
+        "N/A",
+        "Medium"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "aud-001",
+      "query": "Assess PCAOB AS 2810 compliance risks in JPMorgan's Q3 2023 audit disclosures.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 78589,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 2,
+      "risk_levels_found": [
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "aud-002",
+      "query": "What audit evidence gaps exist in JPMorgan's 2023 Q3 disclosures relevant to PCAOB requirements?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 66243,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 2,
+      "risk_levels_found": [
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "aud-003",
+      "query": "Identify material misstatement risks in JPMorgan Q3 2023 based on PCAOB audit standards.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 64888,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 2,
+      "risk_levels_found": [
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "aud-004",
+      "query": "Review internal control compliance in JPMorgan's Q3 2023 revenue reporting under PCAOB AS 2201.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 87049,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 3,
+      "risk_levels_found": [
+        "Medium",
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "aud-005",
+      "query": "Evaluate adequacy of JPMorgan auditor independence disclosures in 2023 annual filings under PCAOB rules.",
+      "success": false,
+      "confidence": 0.0,
+      "latency_ms": 0,
+      "agents_invoked": [],
+      "fallback_events": [],
+      "findings_count": 0,
+      "risk_levels_found": [],
+      "report_structure_valid": false,
+      "failure_mode": null,
+      "skipped": true,
+      "skip_reason": "requires_retrieval=true but Quaestor unreachable",
+      "error": null
+    },
+    {
+      "id": "risk-001",
+      "query": "What are the top compliance risks in JPMorgan's 2023 Q3 financial disclosures across revenue and audit standards?",
+      "success": false,
+      "confidence": 0.0,
+      "latency_ms": 0,
+      "agents_invoked": [],
+      "fallback_events": [],
+      "findings_count": 0,
+      "risk_levels_found": [],
+      "report_structure_valid": false,
+      "failure_mode": null,
+      "skipped": true,
+      "skip_reason": "requires_retrieval=true but Quaestor unreachable",
+      "error": null
+    },
+    {
+      "id": "risk-002",
+      "query": "Assess systemic compliance risk in JPMorgan's revenue recognition and audit disclosure practices for Q3 2023.",
+      "success": false,
+      "confidence": 0.0,
+      "latency_ms": 0,
+      "agents_invoked": [],
+      "fallback_events": [],
+      "findings_count": 0,
+      "risk_levels_found": [],
+      "report_structure_valid": false,
+      "failure_mode": null,
+      "skipped": true,
+      "skip_reason": "requires_retrieval=true but Quaestor unreachable",
+      "error": null
+    },
+    {
+      "id": "risk-003",
+      "query": "Identify the highest-priority compliance remediation actions for JPMorgan based on Q3 2023 disclosures.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 75914,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 3,
+      "risk_levels_found": [
+        "Medium",
+        "High",
+        "Low"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "edge-001",
+      "query": "What are the compliance implications if no revenue recognition disclosures exist for Q3 2023?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 67903,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 3,
+      "risk_levels_found": [
+        "Medium",
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null
+    },
+    {
+      "id": "edge-002",
+      "query": "Analyze cross-company revenue recognition compliance patterns across JPMorgan and Wells Fargo Q3 2023.",
+      "success": false,
+      "confidence": 0.0,
+      "latency_ms": 0,
+      "agents_invoked": [],
+      "fallback_events": [],
+      "findings_count": 0,
+      "risk_levels_found": [],
+      "report_structure_valid": false,
+      "failure_mode": null,
+      "skipped": true,
+      "skip_reason": "requires_retrieval=true but Quaestor unreachable",
+      "error": null
+    }
+  ]
+}
