@@ -58,4 +58,8 @@ class WorkflowResponse(BaseModel):
         default_factory=list,
         description="Agents called during execution"
     )
+    fallback_events: List[str] = Field(
+        default_factory=list,
+        description="Agents that fell back to rule-based logic (confidence < 0.5)"
+    )
     error: Optional[str] = Field(default=None, description="Error message if failed")
