@@ -137,8 +137,15 @@ class WorkflowGraph:
                 output.result.get("plan_summary", ""),
             )
 
+            fallback_events: List[str] = list(state.get("fallback_events") or [])
+            if output.confidence < 0.5:
+                fallback_events.append("planner")
+                logger.warning("Planner fallback activated for query: %.80s", user_query)
+
             return {
                 "task_plan": task_plan_dicts,
+                "planner_confidence": output.confidence,
+                "fallback_events": fallback_events,
                 "current_agent": "planner",
                 "agent_history": history + ["planner"],
             }
@@ -147,6 +154,7 @@ class WorkflowGraph:
             logger.error("PlannerAgent node failed: %s", exc, exc_info=True)
             return {
                 "error": f"Planner error: {exc}",
+                "planner_confidence": 0.0,
                 "current_agent": "planner",
                 "agent_history": history + ["planner"],
             }
@@ -188,8 +196,15 @@ class WorkflowGraph:
 
             logger.info("AnalystAgent produced %d finding(s)", len(risk_findings))
 
+            fallback_events: List[str] = list(state.get("fallback_events") or [])
+            if output.confidence < 0.5:
+                fallback_events.append("analyst")
+                logger.warning("Analyst fallback activated for query: %.80s", state.get("user_query", ""))
+
             return {
                 "risk_findings": risk_findings,
+                "analyst_confidence": output.confidence,
+                "fallback_events": fallback_events,
                 "current_agent": "analyst",
                 "agent_history": history + ["analyst"],
             }
@@ -198,6 +213,7 @@ class WorkflowGraph:
             logger.error("AnalystAgent node failed: %s", exc, exc_info=True)
             return {
                 "error": f"Analyst error: {exc}",
+                "analyst_confidence": 0.0,
                 "current_agent": "analyst",
                 "agent_history": history + ["analyst"],
             }
@@ -231,8 +247,15 @@ class WorkflowGraph:
                 output.result.get("summary", ""),
             )
 
+            fallback_events: List[str] = list(state.get("fallback_events") or [])
+            if output.confidence < 0.5:
+                fallback_events.append("synthesizer")
+                logger.warning("Synthesizer fallback activated for query: %.80s", state.get("user_query", ""))
+
             return {
                 "final_report": output.final_report,
+                "synthesizer_confidence": output.confidence,
+                "fallback_events": fallback_events,
                 "current_agent": "synthesizer",
                 "agent_history": history + ["synthesizer"],
             }
@@ -241,6 +264,7 @@ class WorkflowGraph:
             logger.error("SynthesizerAgent node failed: %s", exc, exc_info=True)
             return {
                 "error": f"Synthesizer error: {exc}",
+                "synthesizer_confidence": 0.0,
                 "current_agent": "synthesizer",
                 "agent_history": history + ["synthesizer"],
             }

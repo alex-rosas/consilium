@@ -149,14 +149,23 @@ async def execute_workflow(request: WorkflowRequest) -> WorkflowResponse:
         risk_findings: List[dict] = final_state.get("risk_findings") or []
         final_report: str = final_state.get("final_report") or ""
         agents_invoked: List[str] = final_state.get("agent_history") or []
+        fallback_events: List[str] = final_state.get("fallback_events") or []
 
         summary = final_report[:300] if final_report else "No synthesis report generated"
 
+        # Aggregate confidence: min across all agents that ran (absent fields default to 1.0)
+        final_confidence = min(
+            final_state.get("planner_confidence", 1.0),
+            final_state.get("analyst_confidence", 1.0),
+            final_state.get("synthesizer_confidence", 1.0),
+        )
+
         logger.info(
-            "Workflow complete. Agents: %s. Findings: %d. Report: %d chars.",
+            "Workflow complete. Agents: %s. Findings: %d. Report: %d chars. Confidence: %.2f.",
             agents_invoked,
             len(risk_findings),
             len(final_report),
+            final_confidence,
         )
 
         return WorkflowResponse(
@@ -165,8 +174,9 @@ async def execute_workflow(request: WorkflowRequest) -> WorkflowResponse:
                 risk_findings=risk_findings,  # type: ignore[arg-type]
                 summary=summary,
             ),
-            confidence=0.75,
+            confidence=final_confidence,
             agents_invoked=agents_invoked,
+            fallback_events=fallback_events,
             error=None,
         )
 

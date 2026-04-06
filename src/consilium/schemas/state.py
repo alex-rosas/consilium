@@ -52,5 +52,13 @@ class WorkflowState(TypedDict, total=False):
     current_agent: str
     agent_history: List[str]
 
+    # Per-agent confidence (set by each graph node)
+    planner_confidence: float
+    analyst_confidence: float
+    synthesizer_confidence: float
+
+    # Fallback observability — each node appends its name if confidence < 0.5
+    fallback_events: List[str]
+
     # Error handling — set by any agent on failure
     error: Optional[str]
