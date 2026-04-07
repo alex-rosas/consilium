@@ -8,7 +8,7 @@ and the schema contract guarantees compatibility.
 """
 
 from pydantic import BaseModel, Field, ConfigDict
-from typing import List, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 
 class RetrievalResult(BaseModel):
@@ -20,8 +20,8 @@ class RetrievalResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     chunk_text: str = Field(..., description="Retrieved text chunk")
-    metadata: Dict[str, str] = Field(..., description="Document metadata")
-    score: float = Field(..., ge=0.0, le=1.0, description="Relevance score")
+    metadata: Dict[str, Any] = Field(..., description="Document metadata")
+    score: float = Field(..., ge=0.0, description="Relevance score")
 
 
 class MockRetrieval:
