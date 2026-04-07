@@ -62,4 +62,8 @@ class WorkflowResponse(BaseModel):
         default_factory=list,
         description="Agents that fell back to rule-based logic (confidence < 0.5)"
     )
+    trace_id: Optional[str] = Field(
+        default=None,
+        description="OpenTelemetry trace ID for Phoenix correlation"
+    )
     error: Optional[str] = Field(default=None, description="Error message if failed")
