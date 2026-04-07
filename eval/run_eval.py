@@ -78,6 +78,7 @@ class CaseResult:
     skipped: bool = False
     skip_reason: Optional[str] = None
     error: Optional[str] = None
+    trace_id: Optional[str] = None
     full_response: Optional[dict] = None
 
 
@@ -288,6 +289,7 @@ async def run_case(
             risk_levels_found=risk_levels,
             report_structure_valid=report_structure_valid,
             failure_mode=failure_mode,
+            trace_id=data.get("trace_id"),
             full_response=data if store_responses else None,
         )
 
@@ -434,6 +436,15 @@ async def main(api_url: str, phase: str, store_responses: bool = False) -> None:
     logger.info("Report structure pass rate: %.1f%%", metrics.report_structure_pass_rate * 100)
     if metrics.failure_mode_counts:
         logger.info("Failure modes: %s", metrics.failure_mode_counts)
+
+    # Log failed cases with trace IDs for Phoenix correlation
+    print("\n=== Failed Cases (trace IDs for Phoenix correlation) ===")
+    failed_cases = [r for r in results if not r.success and not r.skipped]
+    if failed_cases:
+        for case in failed_cases:
+            print(f"  {case.id}: trace_id={case.trace_id or 'N/A'}")
+    else:
+        print("  No failed cases")
 
     # Gate check
     gate_passed = (
