@@ -11,9 +11,11 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List
 
 from fastapi import FastAPI, HTTPException
+from opentelemetry import trace
 
 from consilium.config import settings
 from consilium.integrations.factory import create_retrieval_client
+from consilium.observability.tracing import init_tracing, instrument_fastapi
 from consilium.schemas.workflow import WorkflowRequest, WorkflowResponse, WorkflowResult
 from consilium.workflow.graph import WorkflowGraph
 
@@ -35,7 +37,10 @@ _retrieval = create_retrieval_client(settings)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Log retrieval provider and warn if Quaestor is unreachable at startup."""
+    """Initialize tracing, log retrieval provider, warn if Quaestor unreachable."""
+    init_tracing()
+    instrument_fastapi(app)
+    logger.info("OpenTelemetry tracing initialized")
     logger.info(
         "Consilium API starting. Retrieval provider: %s", settings.retrieval_provider
     )
@@ -62,7 +67,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="Consilium API",
     description="Multi-agent compliance automation system",
-    version="0.3.0",  # Phase 2
+    version="0.5.0",  # Phase 5
     lifespan=lifespan,
 )
 
@@ -72,8 +77,8 @@ async def root() -> dict:
     """Root health check."""
     return {
         "status": "healthy",
-        "version": "0.3.0",
-        "phase": "Phase 2: Real Quaestor integration",
+        "version": "0.5.0",
+        "phase": "Phase 5: Observability",
     }
 
 
@@ -91,7 +96,7 @@ async def health_check() -> dict:
 
     return {
         "status": "healthy",
-        "version": "0.3.0",
+        "version": "0.5.0",
         "components": {
             "workflow": "WorkflowGraph (planner→analyst→synthesizer)",
             "retrieval": retrieval_status,
@@ -125,6 +130,12 @@ async def execute_workflow(request: WorkflowRequest) -> WorkflowResponse:
     """
     try:
         logger.info("Executing workflow for query: %.80s...", request.query)
+
+        # Extract trace ID from current OTel span (populated by FastAPI instrumentation)
+        current_span = trace.get_current_span()
+        trace_id: str | None = None
+        if current_span.get_span_context().is_valid:
+            trace_id = format(current_span.get_span_context().trace_id, "032x")
 
         # Step 1: Retrieve document chunks (provider controlled by RETRIEVAL_PROVIDER)
         chunks = await _retrieval.retrieve(request.query, top_k=5)
@@ -177,6 +188,7 @@ async def execute_workflow(request: WorkflowRequest) -> WorkflowResponse:
             confidence=final_confidence,
             agents_invoked=agents_invoked,
             fallback_events=fallback_events,
+            trace_id=trace_id,
             error=None,
         )
 

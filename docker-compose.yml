@@ -25,6 +25,8 @@ services:
       # gateway (the host machine), making the config identical across all platforms.
       # On macOS/Windows Docker Desktop this entry is redundant but harmless.
       - "host.docker.internal:host-gateway"
+    networks:
+      - consilium-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
@@ -33,9 +35,30 @@ services:
       retries: 3
       start_period: 15s
 
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: consilium-phoenix
+    ports:
+      - "6006:6006"   # Phoenix UI
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    environment:
+      - PHOENIX_WORKING_DIR=/data
+    volumes:
+      - phoenix-data:/data
+    networks:
+      - consilium-network
+
+networks:
+  consilium-network:
+    driver: bridge
+
+volumes:
+  phoenix-data:
+    driver: local
+
 # NOTE: Quaestor is NOT included here intentionally.
 # Quaestor is an independent service (separate repo, separate compose file).
 # To use real retrieval:
 #   1. Start Quaestor: cd ../quaestor && docker-compose up
 #   2. Set RETRIEVAL_PROVIDER=quaestor above
-# Phase 5 will add observability services (Arize Phoenix, OpenTelemetry).
