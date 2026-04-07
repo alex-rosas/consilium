@@ -236,3 +236,102 @@ class TestFallbackEventTracking:
         update = await graph._synthesizer_node(state)
 
         assert update.get("fallback_events", []) == []
+
+
+class TestExceptionPathFallbackEvents:
+    """Exception path: agents that raise must still populate fallback_events."""
+
+    @pytest.mark.asyncio
+    async def test_planner_exception_populates_fallback_events(self) -> None:
+        """PlannerAgent exception must add 'planner' to fallback_events."""
+        from consilium.workflow.graph import WorkflowGraph
+
+        graph = WorkflowGraph.__new__(WorkflowGraph)
+
+        mock_planner = MagicMock()
+        mock_planner.execute = AsyncMock(side_effect=RuntimeError("LLM unreachable"))
+        graph._planner = mock_planner
+        graph._guardrails = MagicMock()
+        graph._guardrails.check_and_redact_pii = MagicMock(return_value=("query long enough here", False))
+
+        state: WorkflowState = {
+            "user_query": "query long enough here",
+            "fallback_events": [],
+            "agent_history": [],
+        }
+        update = await graph._planner_node(state)
+
+        assert "fallback_events" in update
+        assert "planner" in update["fallback_events"]
+        assert update.get("planner_confidence") == 0.0
+
+    @pytest.mark.asyncio
+    async def test_analyst_exception_populates_fallback_events(self) -> None:
+        """AnalystAgent exception must add 'analyst' to fallback_events."""
+        from consilium.workflow.graph import WorkflowGraph
+
+        graph = WorkflowGraph.__new__(WorkflowGraph)
+
+        mock_analyst = MagicMock()
+        mock_analyst.execute = AsyncMock(side_effect=RuntimeError("Groq API 500"))
+        graph._analyst = mock_analyst
+
+        state: WorkflowState = {
+            "user_query": "test query",
+            "retrieved_chunks": [],
+            "task_plan": [],
+            "fallback_events": ["planner"],
+            "agent_history": ["planner"],
+        }
+        update = await graph._analyst_node(state)
+
+        assert "analyst" in update["fallback_events"]
+        # Must preserve pre-existing fallback events
+        assert "planner" in update["fallback_events"]
+        assert update.get("analyst_confidence") == 0.0
+
+    @pytest.mark.asyncio
+    async def test_synthesizer_exception_populates_fallback_events(self) -> None:
+        """SynthesizerAgent exception must add 'synthesizer' to fallback_events."""
+        from consilium.workflow.graph import WorkflowGraph
+
+        graph = WorkflowGraph.__new__(WorkflowGraph)
+
+        mock_synthesizer = MagicMock()
+        mock_synthesizer.execute = AsyncMock(side_effect=ValueError("Schema validation failed"))
+        graph._synthesizer = mock_synthesizer
+
+        state: WorkflowState = {
+            "user_query": "test query long enough to pass validation",
+            "risk_findings": [],
+            "fallback_events": [],
+            "agent_history": ["planner", "analyst"],
+        }
+        update = await graph._synthesizer_node(state)
+
+        assert "synthesizer" in update["fallback_events"]
+        assert update.get("synthesizer_confidence") == 0.0
+
+    @pytest.mark.asyncio
+    async def test_analyst_exception_preserves_prior_fallback_events(self) -> None:
+        """Exception path must not lose fallback events already in state."""
+        from consilium.workflow.graph import WorkflowGraph
+
+        graph = WorkflowGraph.__new__(WorkflowGraph)
+
+        mock_analyst = MagicMock()
+        mock_analyst.execute = AsyncMock(side_effect=RuntimeError("error"))
+        graph._analyst = mock_analyst
+
+        state: WorkflowState = {
+            "user_query": "test query",
+            "retrieved_chunks": [],
+            "task_plan": [],
+            "fallback_events": ["planner", "other"],
+            "agent_history": ["planner"],
+        }
+        update = await graph._analyst_node(state)
+
+        assert "planner" in update["fallback_events"]
+        assert "other" in update["fallback_events"]
+        assert "analyst" in update["fallback_events"]
