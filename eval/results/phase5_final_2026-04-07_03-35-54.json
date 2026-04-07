@@ -1,0 +1,1479 @@
+{
+  "timestamp": "2026-04-07T03:35:54.696016+00:00",
+  "phase": "phase5_final",
+  "api_url": "http://localhost:8001",
+  "quaestor_reachable": true,
+  "store_responses": true,
+  "gate_passed": false,
+  "metrics": {
+    "task_completion_rate": 0.75,
+    "fallback_activation_rate": 0.25,
+    "planner_fallback_rate": 0.0,
+    "analyst_fallback_rate": 0.25,
+    "synthesizer_fallback_rate": 0.0,
+    "p95_latency_ms": 65407.85,
+    "p50_latency_ms": 7420.0,
+    "mean_latency_ms": 13729.65,
+    "report_structure_pass_rate": 1.0,
+    "cases_run": 20,
+    "cases_skipped": 0,
+    "cases_succeeded": 15,
+    "cases_failed": 5,
+    "failure_mode_counts": {
+      "analyst_fallback": 5
+    }
+  },
+  "cases": [
+    {
+      "id": "rev-001",
+      "query": "What are the revenue recognition compliance risks for JPMorgan Q3 2023 under IFRS 15?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 2083,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "Medium",
+        "Low",
+        "N/A",
+        "N/A",
+        "N/A"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "What are the revenue recognition compliance risks for JPMorgan Q3 2023 under IFRS 15?",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "IFRS 15",
+              "finding": "Revenue recognition on a straight-line basis may not align with IFRS 15 requirements, which may lead to misstatement of revenue.",
+              "risk_level": "Medium",
+              "document_source": "Chunk 1"
+            },
+            {
+              "clause_reference": "IFRS 15",
+              "finding": "IFRS 15 effective date was deferred to 1 January 2018, which may impact revenue recognition for contracts with customers.",
+              "risk_level": "Low",
+              "document_source": "Chunk 3"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "No compliance risks related to revenue recognition under IFRS 15 found in this chunk.",
+              "risk_level": "N/A",
+              "document_source": "Chunk 2"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "No compliance risks related to revenue recognition under IFRS 15 found in this chunk.",
+              "risk_level": "N/A",
+              "document_source": "Chunk 4"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "No compliance risks related to revenue recognition under IFRS 15 found in this chunk.",
+              "risk_level": "N/A",
+              "document_source": "Chunk 5"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** What are the revenue recognition compliance risks for JPMorgan Q3 2023 under IFRS 15?\n\n## Executive Summary\nTotal findings: 5\n- High risk: 0\n- Medium risk: 1\n- Low risk: 1\n- N/A: 3\n\n## Detailed Findings\n\n### Medium Risk\n- **IFRS 15:** Revenue recognition on"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "rev-002",
+      "query": "Does JPMorgan's Q3 2023 performance obligation disclosure comply with IFRS 15.31 requirements?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 1760,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "Medium",
+        "Medium",
+        "Medium",
+        "Medium",
+        "Medium"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Does JPMorgan's Q3 2023 performance obligation disclosure comply with IFRS 15.31 requirements?",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "Disclosure of performance obligations is not explicitly mentioned in this chunk, but it is related to the topic of performance obligations.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023"
+            },
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "This chunk is related to the disclosure of performance obligations, but it does not provide specific information about the timing of satisfaction of performance obligations.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023"
+            },
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "This chunk is related to the disclosure of performance obligations, but it does not provide specific information about the timing of satisfaction of performance obligations.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023"
+            },
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "This chunk is related to the disclosure of performance obligations, but it does not provide specific information about the timing of satisfaction of performance obligations.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023"
+            },
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "This chunk provides information about determining the timing of satisfaction of performance obligations, which is related to IFRS 15.31.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Does JPMorgan's Q3 2023 performance obligation disclosure comply with IFRS 15.31 requirements?\n\n## Executive Summary\nTotal findings: 5\n- High risk: 0\n- Medium risk: 5\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### Medium Risk\n- **IFRS 15.31:** Disclosure"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "rev-003",
+      "query": "Assess whether variable consideration estimates in JPMorgan's revenue disclosures meet IFRS 15 constraints.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 1373,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 4,
+      "risk_levels_found": [
+        "Medium",
+        "Medium",
+        "Medium",
+        "Medium"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Assess whether variable consideration estimates in JPMorgan's revenue disclosures meet IFRS 15 constraints.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "IFRS 15.56-58",
+              "finding": "JPMorgan's revenue disclosures do not explicitly mention the requirements for constraining estimates of variable consideration, which may lead to inaccurate revenue recognition.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "IFRS 15.120",
+              "finding": "JPMorgan's revenue disclosures may not include estimates of variable consideration that are constrained, which could result in incomplete or misleading information.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "IFRS 15.56-58",
+              "finding": "JPMorgan's revenue disclosures do not provide clear guidance on constraining estimates of variable consideration, which may lead to inconsistent application of IFRS 15.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "IFRS 15.81-86",
+              "finding": "JPMorgan's revenue disclosures do not address the allocation of consideration that includes variable amounts, which may lead to inaccurate revenue recognition.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Assess whether variable consideration estimates in JPMorgan's revenue disclosures meet IFRS 15 constraints.\n\n## Executive Summary\nTotal findings: 4\n- High risk: 0\n- Medium risk: 4\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### Medium Risk\n- **IFRS 15.56-"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "rev-004",
+      "query": "Review JPMorgan Q3 2023 contract identification practices under the IFRS 15 five-step model.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 2262,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 6,
+      "risk_levels_found": [
+        "Medium",
+        "High",
+        "Medium",
+        "High",
+        "High",
+        "Medium"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Review JPMorgan Q3 2023 contract identification practices under the IFRS 15 five-step model.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "IFRS 15",
+              "finding": "IFRS 15 provides a comprehensive framework for recognising revenue from contracts with customers, but the effective date was deferred to 1 January 2018.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "IFRS 3",
+              "finding": "IFRS 3 addresses the acquisition of contracts with embedded derivatives in a business combination, indicating a need for careful contract identification and analysis.",
+              "risk_level": "High",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "IFRS 9",
+              "finding": "IFRS 9 is mentioned in relation to IFRS 3, suggesting potential compliance risks in accounting for contracts with embedded derivatives.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Item 15(a)(3) of Form 10-K",
+              "finding": "Management contracts or compensatory plans must be identified pursuant to Item 15(a)(3), indicating a need for accurate contract disclosure.",
+              "risk_level": "High",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "The five-step model in IFRS 15 requires careful analysis to ensure compliance, including identifying performance obligations and determining transaction prices.",
+              "risk_level": "High",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "IFRS 15",
+              "finding": "The standard provides a comprehensive framework for recognising revenue from contracts with customers, but requires careful application to ensure compliance.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Review JPMorgan Q3 2023 contract identification practices under the IFRS 15 five-step model.\n\n## Executive Summary\nTotal findings: 6\n- High risk: 3\n- Medium risk: 3\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### High Risk\n- **IFRS 3:** IFRS 3 addresses t"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "rev-005",
+      "query": "What revenue recognition risks exist in JPMorgan investment banking fee disclosures for Q3 2023?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 1786,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 4,
+      "risk_levels_found": [
+        "Medium",
+        "Low",
+        "Medium",
+        "Medium"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "What revenue recognition risks exist in JPMorgan investment banking fee disclosures for Q3 2023?",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "JPMorganChase uses estimates of industry-wide investment banking fees, sourced from Dealogic, to determine the proportion of fee revenue. This may lead to revenue recognition risks if the estimates are inaccurate.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "JPMorganChase excludes certain types of investment banking fees from its global fees, which may impact revenue recognition.",
+              "risk_level": "Low",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "JPMorganChase recognizes noninterest revenue from certain contracts with customers in investment banking fees, which may lead to revenue recognition risks if the contracts are terminated or modified.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "JPMorganChase records noninterest revenue from various sources, including investment banking fees, which may lead to revenue recognition risks if the related contracts are terminated or modified.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** What revenue recognition risks exist in JPMorgan investment banking fee disclosures for Q3 2023?\n\n## Executive Summary\nTotal findings: 4\n- High risk: 0\n- Medium risk: 3\n- Low risk: 1\n- N/A: 0\n\n## Detailed Findings\n\n### Medium Risk\n- **IFRS 15.31:** JPMorgan"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "rev-006",
+      "query": "Evaluate the completeness of performance obligation disclosures in JPMorgan's Q3 2023 10-Q filing.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 1628,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 6,
+      "risk_levels_found": [
+        "Medium",
+        "Medium",
+        "Medium",
+        "Medium",
+        "Medium",
+        "Medium"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Evaluate the completeness of performance obligation disclosures in JPMorgan's Q3 2023 10-Q filing.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "ASC 606.10",
+              "finding": "Disclosure of performance obligations in contracts with customers is required, including description of satisfaction timing, performance obligation type, and customer acceptance.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023 10-Q"
+            },
+            {
+              "clause_reference": "ASC 606.35",
+              "finding": "Entities must disclose both the timing of satisfaction and progress towards complete satisfaction of performance obligations satisfied over time.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023 10-Q"
+            },
+            {
+              "clause_reference": "ASC 606.35-37",
+              "finding": "Revenue recognition over time requires measuring progress towards complete satisfaction of performance obligations.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023 10-Q"
+            },
+            {
+              "clause_reference": "ASC 606.B83-B86",
+              "finding": "Disclosure of customer acceptance is required for performance obligations.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023 10-Q"
+            },
+            {
+              "clause_reference": "ASC 606.B87-B89",
+              "finding": "Disclosure of disaggregated revenue is required for performance obligations.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023 10-Q"
+            },
+            {
+              "clause_reference": "ASU 2023-07",
+              "finding": "ASU 2023-07 requires disclosure of segment expenses and CODM information.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023 10-Q"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Evaluate the completeness of performance obligation disclosures in JPMorgan's Q3 2023 10-Q filing.\n\n## Executive Summary\nTotal findings: 6\n- High risk: 0\n- Medium risk: 6\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### Medium Risk\n- **ASC 606.10:** Disclo"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "rev-007",
+      "query": "Analyze IFRS 15 transaction price allocation compliance in financial services revenue reporting.",
+      "success": false,
+      "confidence": 0.3,
+      "latency_ms": 12505,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [
+        "analyst"
+      ],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "N/A",
+        "Medium",
+        "Medium",
+        "N/A",
+        "Medium"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": "analyst_fallback",
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Analyze IFRS 15 transaction price allocation compliance in financial services revenue reporting.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "Unknown",
+              "finding": "(a) the aggregate amount of the transaction price allocated to the\nperformance obligations that are ...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "entity shall allocate the transaction price to the product and the service. If an\nB28\nB29\nB30\nB31\nB3...",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "Measurement\nWhen (or as) a performance obligation is satisfied, an entity shall recognise\nas revenue...",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "(iii) allocating the transaction price to the satisfied and unsatisfied\nperformance obligations.\n(d)...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "To meet the allocation objective, an entity shall allocate the transaction price\nto each performance...",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Analyze IFRS 15 transaction price allocation compliance in financial services revenue reporting.\n\n## Executive Summary\nTotal findings: 5\n- High risk: 0\n- Medium risk: 3\n- Low risk: 0\n- N/A: 2\n\n## Detailed Findings\n\n### Medium Risk\n- **Unknown:** entity shal"
+        },
+        "confidence": 0.3,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [
+          "analyst"
+        ],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "rev-008",
+      "query": "What are the risk implications of JPMorgan's revenue growth in Q3 2023 from a compliance perspective?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 10743,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "Medium",
+        "High",
+        "Medium",
+        "High",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "What are the risk implications of JPMorgan's revenue growth in Q3 2023 from a compliance perspective?",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "N/A",
+              "finding": "JPMorganChase may face higher compliance risks and operating costs in jurisdictions with unpredictable legal, regulatory, and judicial frameworks.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "Compliance risks relate to various laws, rules, and regulations across LOBs, Corporate, and jurisdictions, including financial products, client relationships, and customer interactions.",
+              "risk_level": "High",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "Significant compliance risk issues may be reported to the Board Risk Committee and the Audit Committee.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "Unpredictable interpretations of laws and regulations may increase non-compliance risks, leading to penalties, enforcement actions, and operational disruptions.",
+              "risk_level": "High",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "Complex compliance measures may lead to operational disruptions, heightened privacy and data security risks, increased costs, and potential liability and fines.",
+              "risk_level": "High",
+              "document_source": "Unknown"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** What are the risk implications of JPMorgan's revenue growth in Q3 2023 from a compliance perspective?\n\n## Executive Summary\nTotal findings: 5\n- High risk: 3\n- Medium risk: 2\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### High Risk\n- **N/A:** Compliance r"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "rev-009",
+      "query": "Identify potential misstatement risks in JPMorgan's Q3 2023 revenue recognition from IFRS 15 step-2 perspective.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 9416,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 2,
+      "risk_levels_found": [
+        "Medium",
+        "Medium"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Identify potential misstatement risks in JPMorgan's Q3 2023 revenue recognition from IFRS 15 step-2 perspective.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "Revenue recognition practices not explicitly mentioned in the provided chunks, potential misstatement risk due to lack of transparency.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023 Financial Reports"
+            },
+            {
+              "clause_reference": "AS 2110",
+              "finding": "Risk of material misstatement due to unidentified risks not explicitly addressed in the provided chunks.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023 Financial Reports"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Identify potential misstatement risks in JPMorgan's Q3 2023 revenue recognition from IFRS 15 step-2 perspective.\n\n## Executive Summary\nTotal findings: 2\n- High risk: 0\n- Medium risk: 2\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### Medium Risk\n- **IFRS 1"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "rev-010",
+      "query": "Review JPMorgan's Q3 2023 revenue recognition policies for alignment with IFRS 15 timing requirements.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 6438,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 4,
+      "risk_levels_found": [
+        "Medium",
+        "Medium",
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Review JPMorgan's Q3 2023 revenue recognition policies for alignment with IFRS 15 timing requirements.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "IFRS 15",
+              "finding": "IFRS 15 provides a comprehensive framework for recognising revenue from contracts with customers, but the effective date was deferred to 1 January 2018.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "IFRS 15",
+              "finding": "Revenue recognition period may extend beyond the initial contractual period for advance payments.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "IFRS 15",
+              "finding": "Revenue should be recognised over time by measuring progress towards complete satisfaction of a performance obligation.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "IFRS 15",
+              "finding": "Revenue recognition policies may not be aligned with IFRS 15 timing requirements, potentially leading to misstatement of revenue.",
+              "risk_level": "High",
+              "document_source": "Unknown"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Review JPMorgan's Q3 2023 revenue recognition policies for alignment with IFRS 15 timing requirements.\n\n## Executive Summary\nTotal findings: 4\n- High risk: 1\n- Medium risk: 3\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### High Risk\n- **IFRS 15:** Revenue"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "aud-001",
+      "query": "Assess PCAOB AS 2810 compliance risks in JPMorgan's Q3 2023 audit disclosures.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 7689,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "Medium",
+        "High",
+        "Medium",
+        "High",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Assess PCAOB AS 2810 compliance risks in JPMorgan's Q3 2023 audit disclosures.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "PCAOB AS 2810",
+              "finding": "The bank's Code of Conduct may not be effectively communicated to the Board Risk Committee and the Audit Committee, potentially leading to inadequate oversight of significant compliance risk issues.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023 audit disclosures"
+            },
+            {
+              "clause_reference": "PCAOB AS 2810",
+              "finding": "Compliance risks are not clearly defined or prioritized across various LOBs and Corporate, potentially leading to inconsistent risk management and oversight.",
+              "risk_level": "High",
+              "document_source": "JPMorgan Q3 2023 audit disclosures"
+            },
+            {
+              "clause_reference": "PCAOB AS 2810",
+              "finding": "The lead auditor may not consider the implications of PCAOB Rule 3526 in determining compliance, potentially leading to inadequate audit procedures.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan Q3 2023 audit disclosures"
+            },
+            {
+              "clause_reference": "PCAOB AS 2810",
+              "finding": "The bank may not have adequate controls in place to mitigate payment fraud risk, potentially leading to financial losses and reputational damage.",
+              "risk_level": "High",
+              "document_source": "JPMorgan Q3 2023 audit disclosures"
+            },
+            {
+              "clause_reference": "PCAOB AS 2810",
+              "finding": "Compliance risks associated with anti-money laundering, trading activities, market conduct, and product offerings may not be effectively managed, potentially leading to regulatory non-compliance and financial losses.",
+              "risk_level": "High",
+              "document_source": "JPMorgan Q3 2023 audit disclosures"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Assess PCAOB AS 2810 compliance risks in JPMorgan's Q3 2023 audit disclosures.\n\n## Executive Summary\nTotal findings: 5\n- High risk: 3\n- Medium risk: 2\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### High Risk\n- **PCAOB AS 2810:** Compliance risks are not "
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "aud-002",
+      "query": "What audit evidence gaps exist in JPMorgan's 2023 Q3 disclosures relevant to PCAOB requirements?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 7515,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "Medium",
+        "Medium",
+        "Medium",
+        "High",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "What audit evidence gaps exist in JPMorgan's 2023 Q3 disclosures relevant to PCAOB requirements?",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "PCAOB AU-C 330.08",
+              "finding": "The auditor should identify significant accounts and disclosures and their relevant assertions, which may indicate potential misstatements.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "ASU 2023-09",
+              "finding": "The Company will be required to disclose additional information in its income tax rate reconciliation, which may indicate potential misstatements.",
+              "risk_level": "Medium",
+              "document_source": "task_2"
+            },
+            {
+              "clause_reference": "ASU 2023-07",
+              "finding": "The Company will be required to disclose segment expenses and the title and position of the CODM, which may indicate potential misstatements.",
+              "risk_level": "Medium",
+              "document_source": "task_2"
+            },
+            {
+              "clause_reference": "ASU 2023-07",
+              "finding": "The Company may not have adequate audit evidence to support the disclosure of segment expenses and the title and position of the CODM.",
+              "risk_level": "High",
+              "document_source": "task_2"
+            },
+            {
+              "clause_reference": "ASU 2023-09",
+              "finding": "The Company may not have adequate audit evidence to support the disclosure of additional information in its income tax rate reconciliation.",
+              "risk_level": "High",
+              "document_source": "task_2"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** What audit evidence gaps exist in JPMorgan's 2023 Q3 disclosures relevant to PCAOB requirements?\n\n## Executive Summary\nTotal findings: 5\n- High risk: 2\n- Medium risk: 3\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### High Risk\n- **ASU 2023-07:** The Compa"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "aud-003",
+      "query": "Identify material misstatement risks in JPMorgan Q3 2023 based on PCAOB audit standards.",
+      "success": false,
+      "confidence": 0.3,
+      "latency_ms": 54043,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [
+        "analyst"
+      ],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": "analyst_fallback",
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Identify material misstatement risks in JPMorgan Q3 2023 based on PCAOB audit standards.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "Unknown",
+              "finding": "Companies to the United States Securities and Exchange Commission, Final\nReport, at p. 5 (April 23, ...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "to risks of material misstatement during the financial statement audit, as provided\nin AS 2110.65-.6...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": ".12\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0Factors that are relevant to the assessment of the risks of material\nmisstatement associat...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "other auditors) should be commensurate with the risks of material misstatement...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "including changes due to a revised assessment of the risks of material\nmisstatement or the discovery...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Identify material misstatement risks in JPMorgan Q3 2023 based on PCAOB audit standards.\n\n## Executive Summary\nTotal findings: 5\n- High risk: 0\n- Medium risk: 0\n- Low risk: 0\n- N/A: 5\n\n## Detailed Findings\n\n### N/A Risk\n- **Unknown:** Companies to the Unite"
+        },
+        "confidence": 0.3,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [
+          "analyst"
+        ],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "aud-004",
+      "query": "Review internal control compliance in JPMorgan's Q3 2023 revenue reporting under PCAOB AS 2201.",
+      "success": false,
+      "confidence": 0.3,
+      "latency_ms": 66006,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [
+        "analyst"
+      ],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": "analyst_fallback",
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Review internal control compliance in JPMorgan's Q3 2023 revenue reporting under PCAOB AS 2201.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "Unknown",
+              "finding": "Note:\u00a0\u00a0When performing an audit of internal control over financial\nreporting, refer to Appendix B, S...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "internal control over financial reporting was effective as of January\u00a031, 2026. The Company's intern...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "issued by the Committee of Sponsoring Organizations of the Treadway Commission. Based on this evalua...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "issued by the Committee of Sponsoring Organizations of the Treadway Commission. Based on this evalua...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "To the Shareholders and the Board of Directors of Apple Inc.\nOpinion on Internal Control Over Financ...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Review internal control compliance in JPMorgan's Q3 2023 revenue reporting under PCAOB AS 2201.\n\n## Executive Summary\nTotal findings: 5\n- High risk: 0\n- Medium risk: 0\n- Low risk: 0\n- N/A: 5\n\n## Detailed Findings\n\n### N/A Risk\n- **Unknown:** Note:\u00a0\u00a0When per"
+        },
+        "confidence": 0.3,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [
+          "analyst"
+        ],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "aud-005",
+      "query": "Evaluate adequacy of JPMorgan auditor independence disclosures in 2023 annual filings under PCAOB rules.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 25131,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "High",
+        "High",
+        "Medium",
+        "High",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Evaluate adequacy of JPMorgan auditor independence disclosures in 2023 annual filings under PCAOB rules.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "PCAOB 300.01",
+              "finding": "Auditor independence disclosures are missing for the year 2025.",
+              "risk_level": "High",
+              "document_source": "JPMorgan 2023 annual filings"
+            },
+            {
+              "clause_reference": "PCAOB 300.01",
+              "finding": "Auditor independence disclosures are missing for the year 2025.",
+              "risk_level": "High",
+              "document_source": "JPMorgan 2023 annual filings"
+            },
+            {
+              "clause_reference": "PCAOB 300.01",
+              "finding": "The firm maintains compliance with SEC independence requirements and PCAOB independence and ethics requirements, but the written description of how compliance is determined is missing.",
+              "risk_level": "Medium",
+              "document_source": "JPMorgan 2023 annual filings"
+            },
+            {
+              "clause_reference": "PCAOB 300.01",
+              "finding": "A written affirmation as to whether the other auditor is in compliance with SEC independence requirements and PCAOB independence and ethics requirements is missing.",
+              "risk_level": "High",
+              "document_source": "JPMorgan 2023 annual filings"
+            },
+            {
+              "clause_reference": "PCAOB 300.01",
+              "finding": "Auditor independence disclosures are missing for the year 2025.",
+              "risk_level": "High",
+              "document_source": "JPMorgan 2023 annual filings"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Evaluate adequacy of JPMorgan auditor independence disclosures in 2023 annual filings under PCAOB rules.\n\n## Executive Summary\nTotal findings: 5\n- High risk: 4\n- Medium risk: 1\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### High Risk\n- **PCAOB 300.01:** "
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "risk-001",
+      "query": "What are the top compliance risks in JPMorgan's 2023 Q3 financial disclosures across revenue and audit standards?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 6542,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "Medium",
+        "Medium",
+        "Medium",
+        "High",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "What are the top compliance risks in JPMorgan's 2023 Q3 financial disclosures across revenue and audit standards?",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "N/A",
+              "finding": "Compliance risks span multiple laws, rules, and regulations across various LOBs, Corporate, and jurisdictions.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "Compliance risk issues may not be reported to the Board Risk Committee and the Audit Committee.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "Compliance and operational risk issues may not be addressed.",
+              "risk_level": "Medium",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "PCAOB 201.01",
+              "finding": "Internal control over financial reporting may not be effective.",
+              "risk_level": "High",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "Disclosure and financial reporting controls may not be effective.",
+              "risk_level": "High",
+              "document_source": "Unknown"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** What are the top compliance risks in JPMorgan's 2023 Q3 financial disclosures across revenue and audit standards?\n\n## Executive Summary\nTotal findings: 5\n- High risk: 2\n- Medium risk: 3\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### High Risk\n- **PCAOB 2"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "risk-002",
+      "query": "Assess systemic compliance risk in JPMorgan's revenue recognition and audit disclosure practices for Q3 2023.",
+      "success": false,
+      "confidence": 0.3,
+      "latency_ms": 22956,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [
+        "analyst"
+      ],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": "analyst_fallback",
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Assess systemic compliance risk in JPMorgan's revenue recognition and audit disclosure practices for Q3 2023.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "Unknown",
+              "finding": "ates to the Board Risk Committee and the Audit Committee on significant compliance risk issues, as a...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "These compliance risks relate to a wide variety of laws, rules and regulations across the LOBs and C...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "Our compliance programs, information technology and enterprise risk management efforts cannot elimin...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "employee activities. For example, compliance risks include those associated with anti-money launderi...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "Financial Reporting That Is Integrated with An Audit of Financial\nStatements.\n\u00a0For audits involving ...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Assess systemic compliance risk in JPMorgan's revenue recognition and audit disclosure practices for Q3 2023.\n\n## Executive Summary\nTotal findings: 5\n- High risk: 0\n- Medium risk: 0\n- Low risk: 0\n- N/A: 5\n\n## Detailed Findings\n\n### N/A Risk\n- **Unknown:** a"
+        },
+        "confidence": 0.3,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [
+          "analyst"
+        ],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "risk-003",
+      "query": "Identify the highest-priority compliance remediation actions for JPMorgan based on Q3 2023 disclosures.",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 6586,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 4,
+      "risk_levels_found": [
+        "High",
+        "Medium",
+        "Medium",
+        "High"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Identify the highest-priority compliance remediation actions for JPMorgan based on Q3 2023 disclosures.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "N/A",
+              "finding": "Failure to meet compliance obligations may result in significant sanctions.",
+              "risk_level": "High",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "Higher operational and compliance costs may be incurred due to addressing resolution requirements.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "Significant compliance risk issues may not be properly escalated to the Board Risk Committee and the Audit Committee.",
+              "risk_level": "Medium",
+              "document_source": "task_2"
+            },
+            {
+              "clause_reference": "N/A",
+              "finding": "The compliance plan may be challenged by the Commission and private litigants, resulting in significant fines and penalties for noncompliance.",
+              "risk_level": "High",
+              "document_source": "task_2"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Identify the highest-priority compliance remediation actions for JPMorgan based on Q3 2023 disclosures.\n\n## Executive Summary\nTotal findings: 4\n- High risk: 2\n- Medium risk: 2\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### High Risk\n- **N/A:** Failure to"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "edge-001",
+      "query": "What are the compliance implications if no revenue recognition disclosures exist for Q3 2023?",
+      "success": true,
+      "confidence": 0.85,
+      "latency_ms": 7325,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [],
+      "findings_count": 3,
+      "risk_levels_found": [
+        "High",
+        "Medium",
+        "Medium"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": null,
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "What are the compliance implications if no revenue recognition disclosures exist for Q3 2023?",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "Missing revenue recognition disclosures for fiscal years 2025, 2024 and 2023 may indicate non-compliance with IFRS 15.",
+              "risk_level": "High",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "Revenue recognition period extending beyond initial contractual period may indicate non-compliance with IFRS 15.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            },
+            {
+              "clause_reference": "IFRS 15.31",
+              "finding": "Missing disaggregated revenue source information for Greater China may indicate non-compliance with IFRS 15.",
+              "risk_level": "Medium",
+              "document_source": "task_1"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** What are the compliance implications if no revenue recognition disclosures exist for Q3 2023?\n\n## Executive Summary\nTotal findings: 3\n- High risk: 1\n- Medium risk: 2\n- Low risk: 0\n- N/A: 0\n\n## Detailed Findings\n\n### High Risk\n- **IFRS 15.31:** Missing reven"
+        },
+        "confidence": 0.85,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [],
+        "trace_id": null,
+        "error": null
+      }
+    },
+    {
+      "id": "edge-002",
+      "query": "Analyze cross-company revenue recognition compliance patterns across JPMorgan and Wells Fargo Q3 2023.",
+      "success": false,
+      "confidence": 0.3,
+      "latency_ms": 20806,
+      "agents_invoked": [
+        "planner",
+        "analyst",
+        "synthesizer"
+      ],
+      "fallback_events": [
+        "analyst"
+      ],
+      "findings_count": 5,
+      "risk_levels_found": [
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A",
+        "N/A"
+      ],
+      "report_structure_valid": true,
+      "failure_mode": "analyst_fallback",
+      "skipped": false,
+      "skip_reason": null,
+      "error": null,
+      "trace_id": null,
+      "full_response": {
+        "query": "Analyze cross-company revenue recognition compliance patterns across JPMorgan and Wells Fargo Q3 2023.",
+        "result": {
+          "risk_findings": [
+            {
+              "clause_reference": "Unknown",
+              "finding": "recognise revenue on a straight-line basis.\nB14\nB15\nB16\nB17\nB18\nIFRS 15\nA816 \u00a9 IFRS Foundation...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "The Company\u2019s proportion of net sales by disaggregated revenue source was generally consistent for e...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "compliance practices, such as those relating to transaction monitoring, customer screening, recordke...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "\u2013\nNoninterest revenue...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            },
+            {
+              "clause_reference": "Unknown",
+              "finding": "(d)\u00a0\u00a0\u00a0\u00a0Markets consists of CIB's Fixed Income Markets and Equity Markets businesses.The Firm assesse...",
+              "risk_level": "N/A",
+              "document_source": "Unknown"
+            }
+          ],
+          "summary": "# Compliance Assessment Report\n\n**Query:** Analyze cross-company revenue recognition compliance patterns across JPMorgan and Wells Fargo Q3 2023.\n\n## Executive Summary\nTotal findings: 5\n- High risk: 0\n- Medium risk: 0\n- Low risk: 0\n- N/A: 5\n\n## Detailed Findings\n\n### N/A Risk\n- **Unknown:** recognis"
+        },
+        "confidence": 0.3,
+        "agents_invoked": [
+          "planner",
+          "analyst",
+          "synthesizer"
+        ],
+        "fallback_events": [
+          "analyst"
+        ],
+        "trace_id": null,
+        "error": null
+      }
+    }
+  ]
+}
