@@ -4,6 +4,7 @@ All settings loaded from environment variables.
 Never hardcode values — everything goes through Settings.
 """
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Literal
 
@@ -18,9 +19,17 @@ class Settings(BaseSettings):
     )
 
     # LLM Configuration
-    llm_provider: Literal["ollama", "groq", "together"] = "ollama"
+    llm_provider: Literal["ollama", "groq"] = "ollama"
+
+    # Ollama
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama3.1:8b"
+
+    # Groq
+    groq_api_key_1: str = Field(default="", description="Primary Groq API key")
+    groq_api_key_2: str = Field(default="", description="Secondary Groq API key")
+    groq_api_key_3: str = Field(default="", description="Tertiary Groq API key")
+    groq_model: str = Field(default="llama-3.1-8b-instant")
 
     # API Configuration
     api_host: str = "0.0.0.0"

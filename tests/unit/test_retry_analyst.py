@@ -35,7 +35,7 @@ def _make_valid_llm_response() -> AIMessage:
 
 
 def _make_analyst() -> AnalystAgent:
-    with patch("consilium.agents.analyst.ChatOllama"):
+    with patch("consilium.integrations.llm_factory.create_llm_client"):
         agent = AnalystAgent()
     return agent
 

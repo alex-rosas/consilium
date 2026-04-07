@@ -25,7 +25,7 @@ def _make_valid_llm_response() -> AIMessage:
 
 
 def _make_planner() -> PlannerAgent:
-    with patch("consilium.agents.planner.ChatOllama"):
+    with patch("consilium.integrations.llm_factory.create_llm_client"):
         agent = PlannerAgent()
     return agent
 

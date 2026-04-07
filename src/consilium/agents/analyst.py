@@ -13,7 +13,6 @@ import logging
 from typing import List, Literal
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_ollama import ChatOllama
 from pydantic import ConfigDict, Field
 from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
 
@@ -80,12 +79,9 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
 
     def __init__(self) -> None:
         from consilium.config import settings
+        from consilium.integrations.llm_factory import create_llm_client
 
-        self.llm = ChatOllama(
-            base_url=settings.ollama_base_url,
-            model=settings.ollama_model,
-            temperature=0.0,
-        )
+        self.llm = create_llm_client(settings)
 
     @property
     def capabilities(self) -> List[str]:
