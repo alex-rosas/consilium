@@ -79,9 +79,8 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
 
     def __init__(self) -> None:
         from consilium.config import settings
-        from consilium.integrations.llm_factory import create_llm_client
 
-        self.llm = create_llm_client(settings)
+        self._settings = settings
 
     @property
     def capabilities(self) -> List[str]:
@@ -92,8 +91,9 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
         Classify compliance risks across all retrieved chunks in a single LLM call.
 
         Calls ChatOllama with chunk content and instructs it to output a JSON array
-        of ComplianceFinding-compatible objects. Falls back to rule-based classification
-        if the LLM fails or returns unparseable output.
+        of ComplianceFinding-compatible objects. Creates a new LLM client per request
+        for correct key rotation under concurrency. Falls back to rule-based
+        classification if the LLM fails or returns unparseable output.
 
         Args:
             input: AnalystInput with retrieved chunks.
@@ -101,6 +101,8 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
         Returns:
             AnalystOutput with risk findings and confidence score.
         """
+        from consilium.integrations.llm_factory import create_llm_client
+
         chunks = input.retrieved_chunks
 
         if not chunks:
@@ -111,6 +113,7 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
                 reasoning="No retrieved chunks — skipping LLM call",
             )
 
+        llm = getattr(self, "llm", None) or create_llm_client(self._settings)
         sys_msg, user_msg = self._build_prompt(chunks, task_context=input.task_context)
 
         try:
@@ -121,7 +124,7 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
                 reraise=True,
             ):
                 with attempt:
-                    response = await self.llm.ainvoke([sys_msg, user_msg])
+                    response = await llm.ainvoke([sys_msg, user_msg])
                     raw_text = response.content  # AIMessage.content is the string
                     findings = self._parse_llm_response(raw_text)
 

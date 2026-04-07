@@ -1,4 +1,5 @@
 """LLM provider factory for swappable LLM backends."""
+import threading
 from typing import List
 
 from langchain_core.language_models import BaseChatModel
@@ -10,25 +11,27 @@ from consilium.config import Settings
 # Module-level state for Groq key rotation
 _groq_key_index = 0
 _groq_keys_cache: List[str] = []
+_groq_lock = threading.Lock()
 
 
 def _get_groq_api_key(settings: Settings) -> str:
-    """Round-robin across available Groq API keys."""
+    """Round-robin across available Groq API keys (thread-safe)."""
     global _groq_key_index, _groq_keys_cache
 
-    # Build key list on first call
-    if not _groq_keys_cache:
-        for key in [settings.groq_api_key_1, settings.groq_api_key_2, settings.groq_api_key_3]:
-            if key:  # Skip empty keys
-                _groq_keys_cache.append(key)
+    with _groq_lock:
+        # Build key list on first call
+        if not _groq_keys_cache:
+            for key in [settings.groq_api_key_1, settings.groq_api_key_2, settings.groq_api_key_3]:
+                if key:  # Skip empty keys
+                    _groq_keys_cache.append(key)
 
-    if not _groq_keys_cache:
-        raise ValueError("No Groq API keys configured")
+        if not _groq_keys_cache:
+            raise ValueError("No Groq API keys configured")
 
-    # Round-robin selection
-    key = _groq_keys_cache[_groq_key_index % len(_groq_keys_cache)]
-    _groq_key_index += 1
-    return key
+        # Round-robin selection
+        key = _groq_keys_cache[_groq_key_index % len(_groq_keys_cache)]
+        _groq_key_index += 1
+        return key
 
 
 def create_llm_client(settings: Settings) -> BaseChatModel:

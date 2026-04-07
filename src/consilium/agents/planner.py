@@ -86,9 +86,8 @@ class PlannerAgent(BaseAgent[PlannerInput, PlannerOutput]):
 
     def __init__(self) -> None:
         from consilium.config import settings
-        from consilium.integrations.llm_factory import create_llm_client
 
-        self.llm = create_llm_client(settings)
+        self._settings = settings
 
     @property
     def capabilities(self) -> List[str]:
@@ -99,8 +98,12 @@ class PlannerAgent(BaseAgent[PlannerInput, PlannerOutput]):
         Decompose user query into sub-tasks.
 
         Calls ChatOllama with a system/user message pair for reliable JSON output.
+        Creates a new LLM client per request for correct key rotation under concurrency.
         Falls back to single-task plan if LLM fails.
         """
+        from consilium.integrations.llm_factory import create_llm_client
+
+        llm = getattr(self, "llm", None) or create_llm_client(self._settings)
         sys_msg, user_msg = self._build_prompt(input.user_query)
 
         try:
@@ -111,7 +114,7 @@ class PlannerAgent(BaseAgent[PlannerInput, PlannerOutput]):
                 reraise=True,
             ):
                 with attempt:
-                    response = await self.llm.ainvoke([sys_msg, user_msg])
+                    response = await llm.ainvoke([sys_msg, user_msg])
                     raw_text = response.content  # AIMessage.content is the string
                     task_plan = self._parse_llm_response(raw_text)
 

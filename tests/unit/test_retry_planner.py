@@ -8,7 +8,7 @@ Verifies:
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from langchain_core.messages import AIMessage
@@ -25,8 +25,8 @@ def _make_valid_llm_response() -> AIMessage:
 
 
 def _make_planner() -> PlannerAgent:
-    with patch("consilium.integrations.llm_factory.create_llm_client"):
-        agent = PlannerAgent()
+    agent = PlannerAgent()
+    agent.llm = MagicMock()  # type: ignore[attr-defined]
     return agent
 
 

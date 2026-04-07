@@ -1,4 +1,5 @@
 """Unit tests for LLM provider factory."""
+import concurrent.futures
 import pytest
 from unittest.mock import MagicMock
 from langchain_groq import ChatGroq
@@ -16,6 +17,9 @@ def reset_factory_state():
     factory_module._groq_keys_cache = []
     factory_module._groq_key_index = 0
     yield
+    # Cleanup after test
+    factory_module._groq_keys_cache = []
+    factory_module._groq_key_index = 0
 
 
 def test_factory_returns_ollama_when_provider_ollama():
@@ -97,17 +101,41 @@ def test_groq_key_rotation_skips_empty_keys():
     assert "" not in keys_used
 
 
+def test_concurrent_key_rotation_distributes_keys():
+    """10 threads × 10 calls each must distribute across all 3 keys (not all key-1)."""
+    settings = MagicMock(spec=Settings)
+    settings.groq_api_key_1 = "key-1"
+    settings.groq_api_key_2 = "key-2"
+    settings.groq_api_key_3 = "key-3"
+
+    keys_used: list[str] = []
+
+    def draw_key() -> str:
+        return _get_groq_api_key(settings)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(draw_key) for _ in range(100)]
+        keys_used = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+    # All three keys must appear — not saturated on key-1
+    assert "key-1" in keys_used
+    assert "key-2" in keys_used
+    assert "key-3" in keys_used
+    # No unknown keys
+    assert all(k in {"key-1", "key-2", "key-3"} for k in keys_used)
+
+
 def test_planner_agent_uses_factory():
-    """PlannerAgent creates LLM via factory (not hardcoded ChatOllama)."""
+    """PlannerAgent stores settings for per-request LLM creation."""
     from consilium.agents.planner import PlannerAgent
 
     agent = PlannerAgent()
-    assert agent.llm is not None
+    assert agent._settings is not None
 
 
 def test_analyst_agent_uses_factory():
-    """AnalystAgent creates LLM via factory (not hardcoded ChatOllama)."""
+    """AnalystAgent stores settings for per-request LLM creation."""
     from consilium.agents.analyst import AnalystAgent
 
     agent = AnalystAgent()
-    assert agent.llm is not None
+    assert agent._settings is not None
