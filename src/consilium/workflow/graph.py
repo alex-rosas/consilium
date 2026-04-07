@@ -15,10 +15,15 @@ Each node:
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import time
 from typing import Any, Dict, List
 
 from langgraph.graph import END, StateGraph
+from opentelemetry import trace
+
+tracer = trace.get_tracer(__name__)
 
 from consilium.agents.analyst import AnalystAgent, AnalystInput
 from consilium.agents.planner import PlannerAgent, PlannerInput
@@ -113,158 +118,212 @@ class WorkflowGraph:
         Run PlannerAgent.
 
         Applies PII guardrails to user_query before calling the LLM.
-        Writes task_plan to state.
+        Writes task_plan to state. Wrapped in an OTel span for observability.
         """
         history: List[str] = list(state.get("agent_history") or [])
+        query_hash = hashlib.sha256(state["user_query"].encode()).hexdigest()[:8]
 
-        try:
-            user_query = state["user_query"]
-            redacted_query, pii_detected = self._guardrails.check_and_redact_pii(user_query)
-            if pii_detected:
-                logger.warning("PII detected and redacted from user_query before PlannerAgent")
+        with tracer.start_as_current_span("planner_node") as span:
+            span.set_attribute("agent.name", "planner")
+            span.set_attribute("workflow.query_hash", query_hash)
+            start_time = time.time()
 
-            planner_input = PlannerInput(
-                task="Decompose the compliance query into sub-tasks",
-                context={},
-                user_query=redacted_query,
-            )
-            output = await self._planner.execute(planner_input)
-            task_plan_dicts = [task.model_dump() for task in output.task_plan]
+            try:
+                user_query = state["user_query"]
+                redacted_query, pii_detected = self._guardrails.check_and_redact_pii(user_query)
+                if pii_detected:
+                    logger.warning("PII detected and redacted from user_query before PlannerAgent")
 
-            logger.info(
-                "PlannerAgent produced %d task(s): %s",
-                len(task_plan_dicts),
-                output.result.get("plan_summary", ""),
-            )
+                planner_input = PlannerInput(
+                    task="Decompose the compliance query into sub-tasks",
+                    context={},
+                    user_query=redacted_query,
+                )
+                output = await self._planner.execute(planner_input)
+                task_plan_dicts = [task.model_dump() for task in output.task_plan]
 
-            fallback_events: List[str] = list(state.get("fallback_events") or [])
-            if output.confidence < 0.5:
-                fallback_events.append("planner")
-                logger.warning("Planner fallback activated for query: %.80s", user_query)
+                confidence = output.confidence
+                fallback_triggered = confidence < 0.5
+                duration_ms = (time.time() - start_time) * 1000
 
-            return {
-                "task_plan": task_plan_dicts,
-                "planner_confidence": output.confidence,
-                "fallback_events": fallback_events,
-                "current_agent": "planner",
-                "agent_history": history + ["planner"],
-            }
+                span.set_attribute("agent.confidence", confidence)
+                span.set_attribute("agent.fallback_triggered", fallback_triggered)
+                span.set_attribute("agent.duration_ms", duration_ms)
 
-        except Exception as exc:
-            logger.error("PlannerAgent node failed: %s", exc, exc_info=True)
-            return {
-                "error": f"Planner error: {exc}",
-                "planner_confidence": 0.0,
-                "current_agent": "planner",
-                "agent_history": history + ["planner"],
-            }
+                logger.info(
+                    "PlannerAgent produced %d task(s): %s",
+                    len(task_plan_dicts),
+                    output.result.get("plan_summary", ""),
+                )
+
+                fallback_events: List[str] = list(state.get("fallback_events") or [])
+                if fallback_triggered:
+                    fallback_events.append("planner")
+                    logger.warning("Planner fallback activated for query: %.80s", user_query)
+
+                return {
+                    "task_plan": task_plan_dicts,
+                    "planner_confidence": confidence,
+                    "fallback_events": fallback_events,
+                    "current_agent": "planner",
+                    "agent_history": history + ["planner"],
+                }
+
+            except Exception as exc:
+                duration_ms = (time.time() - start_time) * 1000
+                span.set_attribute("agent.error", str(exc))
+                span.set_attribute("agent.confidence", 0.0)
+                span.set_attribute("agent.duration_ms", duration_ms)
+                logger.error("PlannerAgent node failed: %s", exc, exc_info=True)
+                return {
+                    "error": f"Planner error: {exc}",
+                    "planner_confidence": 0.0,
+                    "current_agent": "planner",
+                    "agent_history": history + ["planner"],
+                }
 
     async def _analyst_node(self, state: WorkflowState) -> _StateUpdate:
         """
         Run AnalystAgent.
 
         Reads retrieved_chunks from state (injected by API layer).
-        Writes risk_findings to state as a list of dicts.
+        Writes risk_findings to state as a list of dicts. Wrapped in an OTel span.
         """
         history: List[str] = list(state.get("agent_history") or [])
+        query_hash = hashlib.sha256(state["user_query"].encode()).hexdigest()[:8]
 
-        try:
-            raw_chunks: List[Dict[str, Any]] = state.get("retrieved_chunks") or []
-            retrieved_chunks = [RetrievalResult.model_validate(c) for c in raw_chunks]
+        with tracer.start_as_current_span("analyst_node") as span:
+            span.set_attribute("agent.name", "analyst")
+            span.set_attribute("workflow.query_hash", query_hash)
+            start_time = time.time()
 
-            # Build task context string from Planner output (may be None if Planner failed)
-            task_plan_dicts: List[Dict[str, Any]] = state.get("task_plan") or []
-            task_context: str | None = None
-            if task_plan_dicts:
-                task_context = "\n".join(
-                    f"{t.get('task_id', '?')}: {t.get('description', '')}"
-                    for t in task_plan_dicts
+            try:
+                raw_chunks: List[Dict[str, Any]] = state.get("retrieved_chunks") or []
+                retrieved_chunks = [RetrievalResult.model_validate(c) for c in raw_chunks]
+
+                # Build task context string from Planner output (may be None if Planner failed)
+                task_plan_dicts: List[Dict[str, Any]] = state.get("task_plan") or []
+                task_context: str | None = None
+                if task_plan_dicts:
+                    task_context = "\n".join(
+                        f"{t.get('task_id', '?')}: {t.get('description', '')}"
+                        for t in task_plan_dicts
+                    )
+
+                analyst_input = AnalystInput(
+                    task="Classify compliance risk for the retrieved document chunks",
+                    context={},
+                    retrieved_chunks=retrieved_chunks,
+                    task_context=task_context,
                 )
+                output = await self._analyst.execute(analyst_input)
 
-            analyst_input = AnalystInput(
-                task="Classify compliance risk for the retrieved document chunks",
-                context={},
-                retrieved_chunks=retrieved_chunks,
-                task_context=task_context,
-            )
-            output = await self._analyst.execute(analyst_input)
+                # AnalystOutput.risk_findings is List[ComplianceFinding] — serialise to dicts
+                risk_findings: List[Dict[str, Any]] = [
+                    f.model_dump() for f in output.risk_findings
+                ]
 
-            # AnalystOutput.risk_findings is List[ComplianceFinding] — serialise to dicts
-            risk_findings: List[Dict[str, Any]] = [
-                f.model_dump() for f in output.risk_findings
-            ]
+                confidence = output.confidence
+                fallback_triggered = confidence < 0.5
+                duration_ms = (time.time() - start_time) * 1000
 
-            logger.info("AnalystAgent produced %d finding(s)", len(risk_findings))
+                span.set_attribute("agent.confidence", confidence)
+                span.set_attribute("agent.fallback_triggered", fallback_triggered)
+                span.set_attribute("agent.duration_ms", duration_ms)
 
-            fallback_events: List[str] = list(state.get("fallback_events") or [])
-            if output.confidence < 0.5:
-                fallback_events.append("analyst")
-                logger.warning("Analyst fallback activated for query: %.80s", state.get("user_query", ""))
+                logger.info("AnalystAgent produced %d finding(s)", len(risk_findings))
 
-            return {
-                "risk_findings": risk_findings,
-                "analyst_confidence": output.confidence,
-                "fallback_events": fallback_events,
-                "current_agent": "analyst",
-                "agent_history": history + ["analyst"],
-            }
+                fallback_events: List[str] = list(state.get("fallback_events") or [])
+                if fallback_triggered:
+                    fallback_events.append("analyst")
+                    logger.warning("Analyst fallback activated for query: %.80s", state.get("user_query", ""))
 
-        except Exception as exc:
-            logger.error("AnalystAgent node failed: %s", exc, exc_info=True)
-            return {
-                "error": f"Analyst error: {exc}",
-                "analyst_confidence": 0.0,
-                "current_agent": "analyst",
-                "agent_history": history + ["analyst"],
-            }
+                return {
+                    "risk_findings": risk_findings,
+                    "analyst_confidence": confidence,
+                    "fallback_events": fallback_events,
+                    "current_agent": "analyst",
+                    "agent_history": history + ["analyst"],
+                }
+
+            except Exception as exc:
+                duration_ms = (time.time() - start_time) * 1000
+                span.set_attribute("agent.error", str(exc))
+                span.set_attribute("agent.confidence", 0.0)
+                span.set_attribute("agent.duration_ms", duration_ms)
+                logger.error("AnalystAgent node failed: %s", exc, exc_info=True)
+                return {
+                    "error": f"Analyst error: {exc}",
+                    "analyst_confidence": 0.0,
+                    "current_agent": "analyst",
+                    "agent_history": history + ["analyst"],
+                }
 
     async def _synthesizer_node(self, state: WorkflowState) -> _StateUpdate:
         """
         Run SynthesizerAgent.
 
         Reads risk_findings from state and validates them as ComplianceFinding models.
-        Writes final_report to state.
+        Writes final_report to state. Wrapped in an OTel span for observability.
         """
         history: List[str] = list(state.get("agent_history") or [])
+        query_hash = hashlib.sha256(state["user_query"].encode()).hexdigest()[:8]
 
-        try:
-            raw_findings: List[Dict[str, Any]] = state.get("risk_findings") or []
+        with tracer.start_as_current_span("synthesizer_node") as span:
+            span.set_attribute("agent.name", "synthesizer")
+            span.set_attribute("workflow.query_hash", query_hash)
+            start_time = time.time()
 
-            # Both Analyst and Synthesizer use ComplianceFinding — direct pass-through.
-            risk_findings = [ComplianceFinding.model_validate(f) for f in raw_findings]
+            try:
+                raw_findings: List[Dict[str, Any]] = state.get("risk_findings") or []
 
-            synthesizer_input = SynthesizerInput(
-                task="Aggregate risk findings into a structured compliance report",
-                context={},
-                risk_findings=risk_findings,
-                original_query=state["user_query"],
-            )
-            output = await self._synthesizer.execute(synthesizer_input)
+                # Both Analyst and Synthesizer use ComplianceFinding — direct pass-through.
+                risk_findings = [ComplianceFinding.model_validate(f) for f in raw_findings]
 
-            logger.info(
-                "SynthesizerAgent produced report (%d chars): %s",
-                len(output.final_report),
-                output.result.get("summary", ""),
-            )
+                synthesizer_input = SynthesizerInput(
+                    task="Aggregate risk findings into a structured compliance report",
+                    context={},
+                    risk_findings=risk_findings,
+                    original_query=state["user_query"],
+                )
+                output = await self._synthesizer.execute(synthesizer_input)
 
-            fallback_events: List[str] = list(state.get("fallback_events") or [])
-            if output.confidence < 0.5:
-                fallback_events.append("synthesizer")
-                logger.warning("Synthesizer fallback activated for query: %.80s", state.get("user_query", ""))
+                confidence = output.confidence
+                fallback_triggered = confidence < 0.5
+                duration_ms = (time.time() - start_time) * 1000
 
-            return {
-                "final_report": output.final_report,
-                "synthesizer_confidence": output.confidence,
-                "fallback_events": fallback_events,
-                "current_agent": "synthesizer",
-                "agent_history": history + ["synthesizer"],
-            }
+                span.set_attribute("agent.confidence", confidence)
+                span.set_attribute("agent.fallback_triggered", fallback_triggered)
+                span.set_attribute("agent.duration_ms", duration_ms)
 
-        except Exception as exc:
-            logger.error("SynthesizerAgent node failed: %s", exc, exc_info=True)
-            return {
-                "error": f"Synthesizer error: {exc}",
-                "synthesizer_confidence": 0.0,
-                "current_agent": "synthesizer",
-                "agent_history": history + ["synthesizer"],
-            }
+                logger.info(
+                    "SynthesizerAgent produced report (%d chars): %s",
+                    len(output.final_report),
+                    output.result.get("summary", ""),
+                )
+
+                fallback_events: List[str] = list(state.get("fallback_events") or [])
+                if fallback_triggered:
+                    fallback_events.append("synthesizer")
+                    logger.warning("Synthesizer fallback activated for query: %.80s", state.get("user_query", ""))
+
+                return {
+                    "final_report": output.final_report,
+                    "synthesizer_confidence": confidence,
+                    "fallback_events": fallback_events,
+                    "current_agent": "synthesizer",
+                    "agent_history": history + ["synthesizer"],
+                }
+
+            except Exception as exc:
+                duration_ms = (time.time() - start_time) * 1000
+                span.set_attribute("agent.error", str(exc))
+                span.set_attribute("agent.confidence", 0.0)
+                span.set_attribute("agent.duration_ms", duration_ms)
+                logger.error("SynthesizerAgent node failed: %s", exc, exc_info=True)
+                return {
+                    "error": f"Synthesizer error: {exc}",
+                    "synthesizer_confidence": 0.0,
+                    "current_agent": "synthesizer",
+                    "agent_history": history + ["synthesizer"],
+                }
