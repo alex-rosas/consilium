@@ -16,15 +16,17 @@ Each node:
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import time
-from typing import Any, Dict, List
+from typing import Any, AsyncGenerator, Dict, List
 
 from langgraph.graph import END, StateGraph
 from opentelemetry import trace
 
 tracer = trace.get_tracer(__name__)
 
+from consilium.config import settings
 from consilium.agents.analyst import AnalystAgent, AnalystInput
 from consilium.agents.planner import PlannerAgent, PlannerInput
 from consilium.agents.synthesizer import SynthesizerAgent, SynthesizerInput
@@ -58,6 +60,63 @@ class WorkflowGraph:
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    async def astream(
+        self,
+        user_query: str,
+        retrieved_chunks: List[Dict[str, Any]],
+        trace_id: str | None = None,
+    ) -> AsyncGenerator[str, None]:
+        """
+        Stream workflow execution as Server-Sent Events.
+
+        Yields SSE-formatted strings as each agent node completes.
+        Event sequence: planner_complete → analyst_finding(×N) → analyst_complete
+                        → report_complete → done.
+
+        Args:
+            user_query: Compliance question from the user.
+            retrieved_chunks: List of RetrievalResult dicts.
+            trace_id: OTel trace ID to include in the done event.
+
+        Yields:
+            SSE lines in the format ``data: {json}\\n\\n``.
+        """
+        initial_state: WorkflowState = {
+            "user_query": user_query,
+            "retrieved_chunks": retrieved_chunks,
+            "agent_history": [],
+        }
+
+        async for chunk in self._graph.astream(initial_state):
+            for node_name, update in chunk.items():
+                if node_name == "planner":
+                    event = {
+                        "type": "planner_complete",
+                        "task_count": len(update.get("task_plan") or []),
+                        "confidence": update.get("planner_confidence", 0.0),
+                    }
+                    yield f"data: {json.dumps(event)}\n\n"
+
+                elif node_name == "analyst":
+                    findings = update.get("risk_findings") or []
+                    for finding in findings:
+                        yield f"data: {json.dumps({'type': 'analyst_finding', 'finding': finding})}\n\n"
+                    event = {
+                        "type": "analyst_complete",
+                        "findings_count": len(findings),
+                        "confidence": update.get("analyst_confidence", 0.0),
+                    }
+                    yield f"data: {json.dumps(event)}\n\n"
+
+                elif node_name == "synthesizer":
+                    event = {
+                        "type": "report_complete",
+                        "report": update.get("final_report", ""),
+                    }
+                    yield f"data: {json.dumps(event)}\n\n"
+
+        yield f"data: {json.dumps({'type': 'done', 'trace_id': trace_id})}\n\n"
 
     async def execute(
         self,
@@ -143,7 +202,7 @@ class WorkflowGraph:
                 task_plan_dicts = [task.model_dump() for task in output.task_plan]
 
                 confidence = output.confidence
-                fallback_triggered = confidence < 0.5
+                fallback_triggered = confidence < settings.confidence_threshold
                 duration_ms = (time.time() - start_time) * 1000
 
                 span.set_attribute("agent.confidence", confidence)
@@ -175,9 +234,12 @@ class WorkflowGraph:
                 span.set_attribute("agent.confidence", 0.0)
                 span.set_attribute("agent.duration_ms", duration_ms)
                 logger.error("PlannerAgent node failed: %s", exc, exc_info=True)
+                fallback_events = list(state.get("fallback_events") or [])
+                fallback_events.append("planner")
                 return {
                     "error": f"Planner error: {exc}",
                     "planner_confidence": 0.0,
+                    "fallback_events": fallback_events,
                     "current_agent": "planner",
                     "agent_history": history + ["planner"],
                 }
@@ -224,7 +286,7 @@ class WorkflowGraph:
                 ]
 
                 confidence = output.confidence
-                fallback_triggered = confidence < 0.5
+                fallback_triggered = confidence < settings.confidence_threshold
                 duration_ms = (time.time() - start_time) * 1000
 
                 span.set_attribute("agent.confidence", confidence)
@@ -252,9 +314,12 @@ class WorkflowGraph:
                 span.set_attribute("agent.confidence", 0.0)
                 span.set_attribute("agent.duration_ms", duration_ms)
                 logger.error("AnalystAgent node failed: %s", exc, exc_info=True)
+                fallback_events = list(state.get("fallback_events") or [])
+                fallback_events.append("analyst")
                 return {
                     "error": f"Analyst error: {exc}",
                     "analyst_confidence": 0.0,
+                    "fallback_events": fallback_events,
                     "current_agent": "analyst",
                     "agent_history": history + ["analyst"],
                 }
@@ -289,7 +354,7 @@ class WorkflowGraph:
                 output = await self._synthesizer.execute(synthesizer_input)
 
                 confidence = output.confidence
-                fallback_triggered = confidence < 0.5
+                fallback_triggered = confidence < settings.confidence_threshold
                 duration_ms = (time.time() - start_time) * 1000
 
                 span.set_attribute("agent.confidence", confidence)
@@ -321,9 +386,12 @@ class WorkflowGraph:
                 span.set_attribute("agent.confidence", 0.0)
                 span.set_attribute("agent.duration_ms", duration_ms)
                 logger.error("SynthesizerAgent node failed: %s", exc, exc_info=True)
+                fallback_events = list(state.get("fallback_events") or [])
+                fallback_events.append("synthesizer")
                 return {
                     "error": f"Synthesizer error: {exc}",
                     "synthesizer_confidence": 0.0,
+                    "fallback_events": fallback_events,
                     "current_agent": "synthesizer",
                     "agent_history": history + ["synthesizer"],
                 }

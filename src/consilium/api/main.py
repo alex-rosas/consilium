@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator, List
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from opentelemetry import trace
 
 from consilium.config import settings
@@ -38,9 +39,24 @@ _retrieval = create_retrieval_client(settings)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Initialize tracing, log retrieval provider, warn if Quaestor unreachable."""
-    init_tracing()
+    import httpx as _httpx
+
+    init_tracing(sample_rate=settings.trace_sample_rate)
     instrument_fastapi(app)
-    logger.info("OpenTelemetry tracing initialized")
+    logger.info(
+        "OpenTelemetry tracing initialized (sample_rate=%.2f)", settings.trace_sample_rate
+    )
+
+    # Phoenix reachability check — non-blocking; API starts even if Phoenix is down
+    try:
+        async with _httpx.AsyncClient() as _client:
+            await _client.get("http://localhost:6006", timeout=2.0)
+        logger.info("Phoenix UI reachable at localhost:6006")
+    except Exception:
+        logger.warning(
+            "Phoenix not reachable at localhost:6006 — traces will not be stored "
+            "(API continues normally)"
+        )
     logger.info(
         "Consilium API starting. Retrieval provider: %s", settings.retrieval_provider
     )
@@ -67,7 +83,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="Consilium API",
     description="Multi-agent compliance automation system",
-    version="0.5.0",  # Phase 5
+    version="0.6.0",  # Phase 6
     lifespan=lifespan,
 )
 
@@ -77,7 +93,7 @@ async def root() -> dict:
     """Root health check."""
     return {
         "status": "healthy",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "phase": "Phase 5: Observability",
     }
 
@@ -96,7 +112,7 @@ async def health_check() -> dict:
 
     return {
         "status": "healthy",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "components": {
             "workflow": "WorkflowGraph (planner→analyst→synthesizer)",
             "retrieval": retrieval_status,
@@ -200,3 +216,36 @@ async def execute_workflow(request: WorkflowRequest) -> WorkflowResponse:
             status_code=500,
             detail=f"Internal workflow error: {exc}",
         )
+
+
+@app.post("/workflow/stream")
+async def stream_workflow(request: WorkflowRequest) -> StreamingResponse:
+    """
+    Stream compliance workflow execution as Server-Sent Events.
+
+    Events are emitted as each agent completes:
+      - planner_complete  — task decomposition done
+      - analyst_finding   — one per ComplianceFinding (may be 0)
+      - analyst_complete  — all findings emitted
+      - report_complete   — final report text
+      - done              — stream finished, trace_id included
+
+    Args:
+        request: WorkflowRequest with compliance query.
+
+    Returns:
+        StreamingResponse with media_type text/event-stream.
+    """
+    # Capture trace ID before entering the generator (span is active here)
+    current_span = trace.get_current_span()
+    trace_id: str | None = None
+    if current_span.get_span_context().is_valid:
+        trace_id = format(current_span.get_span_context().trace_id, "032x")
+
+    chunks = await _retrieval.retrieve(request.query, top_k=5)
+    chunks_dicts = [c.model_dump() for c in chunks]
+
+    return StreamingResponse(
+        _workflow.astream(request.query, chunks_dicts, trace_id=trace_id),
+        media_type="text/event-stream",
+    )
