@@ -178,5 +178,95 @@
     "expected_min_findings": 1,
     "requires_retrieval": true,
     "label": "Multi-company cross-document comparison requiring entity linking. MockRetrieval only has JPMorgan data. With real Quaestor this tests cross-document retrieval. Expect N/A or caveat finding noting Wells Fargo data is unavailable."
+  },
+  {
+    "id": "amb-001",
+    "query": "Does JPMorgan's Q3 2023 revenue reporting comply with both IFRS 15 and FASB ASC 606 requirements where they differ?",
+    "expected_risk_levels": ["High", "Medium", "Low", "N/A"],
+    "expected_agents_invoked": ["planner", "analyst", "synthesizer"],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "Ambiguous dual-standard query (IFRS 15 vs ASC 606). The two standards converge on most points but diverge on licenses, variable consideration, and collectability. Analyst must navigate both frameworks from a single set of chunks — intermediate confidence expected."
+  },
+  {
+    "id": "amb-002",
+    "query": "Assess whether JPMorgan's Q3 2023 credit loss disclosures are adequate under IFRS 9 or CECL, whichever applies.",
+    "expected_risk_levels": ["High", "Medium", "Low", "N/A"],
+    "expected_agents_invoked": ["planner", "analyst", "synthesizer"],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "Standard ambiguity: IFRS 9 ECL model vs US GAAP CECL. JPMorgan uses US GAAP so CECL applies, but the query does not specify. MockRetrieval chunks don't cover credit loss directly — sparse retrieval expected, intermediate confidence likely."
+  },
+  {
+    "id": "amb-003",
+    "query": "Review whether JPMorgan's Q3 2023 fair value measurements comply with IFRS 13 or ASC 820 hierarchy requirements.",
+    "expected_risk_levels": ["High", "Medium", "Low", "N/A"],
+    "expected_agents_invoked": ["planner", "analyst", "synthesizer"],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "IFRS 13 vs ASC 820 fair value hierarchy. Standards are substantially converged but have textual differences. Analyst may produce findings with uncertainty caveats — tests intermediate confidence path."
+  },
+  {
+    "id": "amb-004",
+    "query": "Are there compliance gaps in JPMorgan's 2023 segment reporting that could trigger concerns under both IFRS 8 and ASC 280?",
+    "expected_risk_levels": ["High", "Medium", "Low", "N/A"],
+    "expected_agents_invoked": ["planner", "analyst", "synthesizer"],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "IFRS 8 vs ASC 280 segment reporting — another converged-but-not-identical standard pair. MockRetrieval does not contain segment data. Sparse retrieval context with dual-standard ambiguity — intermediate confidence candidate."
+  },
+  {
+    "id": "adj-001",
+    "query": "What Sarbanes-Oxley Section 302 certification risks arise from JPMorgan's Q3 2023 revenue recognition disclosures?",
+    "expected_risk_levels": ["High", "Medium", "Low"],
+    "expected_agents_invoked": ["planner", "analyst", "synthesizer"],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "SOX 302 adjacent to IFRS 15 — tests whether the analyst can connect CEO/CFO certification requirements to revenue disclosure accuracy. Adjacent domain to the primary IFRS/PCAOB training data."
+  },
+  {
+    "id": "adj-002",
+    "query": "Evaluate potential SEC Regulation S-X disclosure violations in JPMorgan's Q3 2023 financial statement presentation.",
+    "expected_risk_levels": ["High", "Medium", "Low", "N/A"],
+    "expected_agents_invoked": ["planner", "analyst", "synthesizer"],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "SEC Reg S-X covers form and content of financial statements. Adjacent to PCAOB but a distinct regulatory domain. Tests system behavior at domain boundary — intermediate confidence expected when chunks lack direct Reg S-X coverage."
+  },
+  {
+    "id": "adj-003",
+    "query": "Assess whether JPMorgan's Q3 2023 disclosures satisfy Basel III Pillar 3 transparency requirements for market risk.",
+    "expected_risk_levels": ["High", "Medium", "Low", "N/A"],
+    "expected_agents_invoked": ["planner", "analyst", "synthesizer"],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "Basel III Pillar 3 is a banking-specific prudential standard outside the core IFRS/PCAOB domain. MockRetrieval has no Basel data. High probability of N/A findings or sparse analysis — tests out-of-domain graceful degradation."
+  },
+  {
+    "id": "cnf-001",
+    "query": "Review whether JPMorgan's Q3 2023 revenue recognition is simultaneously compliant in some areas and non-compliant in others under IFRS 15.",
+    "expected_risk_levels": ["High", "Medium", "Low"],
+    "expected_agents_invoked": ["planner", "analyst", "synthesizer"],
+    "expected_min_findings": 2,
+    "requires_retrieval": false,
+    "label": "Mixed-signal query explicitly requesting identification of both compliant and non-compliant aspects. Tests whether the analyst produces findings at multiple risk levels (Low for compliant areas, High/Medium for gaps) — intermediate confidence distribution target."
+  },
+  {
+    "id": "cnf-002",
+    "query": "What compliance risks exist in JPMorgan's Q3 2023 revenue disclosures if performance obligations are partially satisfied at period end?",
+    "expected_risk_levels": ["High", "Medium", "Low"],
+    "expected_agents_invoked": ["planner", "analyst", "synthesizer"],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "Partially satisfied performance obligations introduce timing uncertainty under IFRS 15.35. The query is specific enough to trigger clause-level analysis but the evidence is circumstantial — intermediate confidence candidate."
+  },
+  {
+    "id": "cnf-003",
+    "query": "Identify any IFRS 15 compliance improvements JPMorgan could make to its Q3 2023 revenue recognition without materially changing reported numbers.",
+    "expected_risk_levels": ["Medium", "Low"],
+    "expected_agents_invoked": ["planner", "analyst", "synthesizer"],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "Improvement-focused (not violation-focused) query. Expects lower risk levels (Medium/Low) rather than High — tests whether the analyst correctly calibrates severity when the framing is constructive rather than adversarial. Low confidence in improvement identification without detailed data."
   }
 ]

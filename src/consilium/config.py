@@ -45,6 +45,29 @@ class Settings(BaseSettings):
     # When False (default): connection errors raise HTTP 503 (production correctness)
     allow_mock_fallback: bool = False
 
+    # Observability
+    trace_sample_rate: float = Field(
+        default=1.0,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "OTel trace sampling rate. 1.0 = sample all requests (development default). "
+            "Set to 0.1 in production to sample 10%% of requests."
+        ),
+    )
+
+    # Workflow
+    confidence_threshold: float = Field(
+        default=0.5,
+        ge=0.0,
+        le=1.0,
+        description=(
+            "Minimum confidence for an agent to be considered successful. "
+            "Agents returning confidence below this value trigger a fallback event. "
+            "Validated on Phase 5 data: bimodal at 0.30 (fallback) and 0.85 (success)."
+        ),
+    )
+
     # Logging
     log_level: str = "INFO"
 
