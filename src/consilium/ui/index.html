@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consilium — Compliance Automation</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ---- header ---- */
+    header { margin-bottom: 2rem; }
+    header h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; }
+    header p  { font-size: 0.9rem; color: #94a3b8; margin-top: 0.3rem; }
+
+    /* ---- query form ---- */
+    #query-form { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; }
+
+    #query-input {
+      flex: 1;
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #query-input:focus { border-color: #6366f1; }
+    #query-input::placeholder { color: #475569; }
+
+    #submit-btn {
+      padding: 0.65rem 1.4rem;
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+    }
+    #submit-btn:hover:not(:disabled) { background: #4f46e5; }
+    #submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ---- spinner ---- */
+    #spinner {
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      margin-bottom: 1.2rem;
+    }
+    #spinner.active { display: flex; }
+    .spin {
+      width: 18px; height: 18px;
+      border: 2px solid #334155;
+      border-top-color: #6366f1;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- section wrappers ---- */
+    .section { display: none; margin-bottom: 1.5rem; }
+    .section.visible { display: block; }
+    .section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 0.6rem;
+    }
+
+    /* ---- planner badge ---- */
+    #planner-section .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+    }
+    #planner-section .badge .count {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #818cf8;
+    }
+
+    /* ---- findings ---- */
+    #findings-list { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .finding-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-left-width: 4px;
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+    }
+    .finding-card.risk-high   { border-left-color: #ef4444; }
+    .finding-card.risk-medium { border-left-color: #f59e0b; }
+    .finding-card.risk-low    { border-left-color: #22c55e; }
+    .finding-card.risk-na     { border-left-color: #64748b; }
+
+    .finding-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.4rem;
+    }
+    .finding-clause { font-weight: 600; font-size: 0.9rem; color: #cbd5e1; }
+    .risk-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+    }
+    .risk-badge.risk-high   { background: #450a0a; color: #fca5a5; }
+    .risk-badge.risk-medium { background: #431407; color: #fcd34d; }
+    .risk-badge.risk-low    { background: #052e16; color: #86efac; }
+    .risk-badge.risk-na     { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+
+    .finding-text { font-size: 0.88rem; color: #94a3b8; line-height: 1.5; }
+
+    /* ---- report ---- */
+    #report-content {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      font-family: "Menlo", "Consolas", monospace;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      color: #cbd5e1;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+
+    /* ---- done / trace link ---- */
+    #done-section .trace-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 0.5rem 0.9rem;
+      text-decoration: none;
+      color: #818cf8;
+      font-size: 0.88rem;
+      transition: border-color 0.2s;
+    }
+    #done-section .trace-link:hover { border-color: #6366f1; }
+    #done-section .no-trace { font-size: 0.88rem; color: #64748b; }
+
+    /* ---- error state ---- */
+    #error-section {
+      display: none;
+      background: #1e293b;
+      border: 1px solid #7f1d1d;
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      margin-bottom: 1.5rem;
+    }
+    #error-section.visible { display: block; }
+    #error-message { color: #fca5a5; font-size: 0.9rem; margin-bottom: 0.6rem; }
+    #retry-btn {
+      background: none;
+      border: 1px solid #ef4444;
+      color: #ef4444;
+      border-radius: 6px;
+      padding: 0.35rem 0.8rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    #retry-btn:hover { background: #450a0a; }
+
+    /* ---- analyst summary ---- */
+    #analyst-summary {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-top: 0.4rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Consilium</h1>
+      <p>Multi-agent compliance automation &mdash; real-time pipeline streaming</p>
+    </header>
+
+    <form id="query-form">
+      <input
+        id="query-input"
+        type="text"
+        placeholder="e.g. What are the IFRS 15 revenue recognition risks in Q3 filings?"
+        autocomplete="off"
+        required
+      />
+      <button id="submit-btn" type="submit">Analyze</button>
+    </form>
+
+    <!-- spinner -->
+    <div id="spinner"><div class="spin"></div><span id="spinner-label">Running pipeline&hellip;</span></div>
+
+    <!-- error -->
+    <div id="error-section">
+      <div id="error-message"></div>
+      <button id="retry-btn">Retry</button>
+    </div>
+
+    <!-- planner output -->
+    <div id="planner-section" class="section">
+      <div class="section-title">Planner</div>
+      <div class="badge">
+        <span class="count" id="task-count">0</span>
+        <span>tasks planned</span>
+        <span id="planner-confidence" style="margin-left:0.5rem;color:#64748b;font-size:0.8rem;"></span>
+      </div>
+    </div>
+
+    <!-- analyst findings -->
+    <div id="findings-section" class="section">
+      <div class="section-title">Analyst Findings</div>
+      <div id="findings-list"></div>
+      <div id="analyst-summary"></div>
+    </div>
+
+    <!-- report -->
+    <div id="report-section" class="section">
+      <div class="section-title">Compliance Report</div>
+      <pre id="report-content"></pre>
+    </div>
+
+    <!-- done -->
+    <div id="done-section" class="section">
+      <div class="section-title">Trace</div>
+      <div id="trace-container"></div>
+    </div>
+  </div>
+
+  <script>
+    // -----------------------------------------------------------------------
+    // DOM references
+    // -----------------------------------------------------------------------
+    const form         = document.getElementById("query-form");
+    const queryInput   = document.getElementById("query-input");
+    const submitBtn    = document.getElementById("submit-btn");
+    const spinner      = document.getElementById("spinner");
+    const spinnerLabel = document.getElementById("spinner-label");
+    const errorSection = document.getElementById("error-section");
+    const errorMsg     = document.getElementById("error-message");
+    const retryBtn     = document.getElementById("retry-btn");
+
+    const plannerSection = document.getElementById("planner-section");
+    const taskCount      = document.getElementById("task-count");
+    const plannerConf    = document.getElementById("planner-confidence");
+
+    const findingsSection = document.getElementById("findings-section");
+    const findingsList    = document.getElementById("findings-list");
+    const analystSummary  = document.getElementById("analyst-summary");
+
+    const reportSection  = document.getElementById("report-section");
+    const reportContent  = document.getElementById("report-content");
+
+    const doneSection    = document.getElementById("done-section");
+    const traceContainer = document.getElementById("trace-container");
+
+    // -----------------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------------
+    function riskClass(level) {
+      if (!level) return "risk-na";
+      switch (level.toLowerCase()) {
+        case "high":   return "risk-high";
+        case "medium": return "risk-medium";
+        case "low":    return "risk-low";
+        default:       return "risk-na";
+      }
+    }
+
+    function showSection(el) { el.classList.add("visible"); }
+
+    function reset() {
+      [plannerSection, findingsSection, reportSection, doneSection].forEach(el =>
+        el.classList.remove("visible")
+      );
+      errorSection.classList.remove("visible");
+      findingsList.innerHTML = "";
+      analystSummary.textContent = "";
+      reportContent.textContent = "";
+      traceContainer.innerHTML = "";
+      taskCount.textContent = "0";
+      plannerConf.textContent = "";
+    }
+
+    function setRunning(running) {
+      submitBtn.disabled = running;
+      queryInput.disabled = running;
+      spinner.classList.toggle("active", running);
+    }
+
+    function showError(message) {
+      errorMsg.textContent = message;
+      errorSection.classList.add("visible");
+      setRunning(false);
+    }
+
+    // -----------------------------------------------------------------------
+    // SSE event handlers
+    // -----------------------------------------------------------------------
+    function handleEvent(event) {
+      switch (event.type) {
+
+        case "planner_complete":
+          taskCount.textContent = event.task_count ?? 0;
+          if (event.confidence != null) {
+            plannerConf.textContent = "(confidence " + event.confidence.toFixed(2) + ")";
+          }
+          spinnerLabel.textContent = "Analyst running\u2026";
+          showSection(plannerSection);
+          break;
+
+        case "analyst_finding": {
+          const f = event.finding || {};
+          const rc = riskClass(f.risk_level);
+          const card = document.createElement("div");
+          card.className = "finding-card " + rc;
+          card.innerHTML =
+            '<div class="finding-header">' +
+              '<span class="finding-clause">' + escHtml(f.clause_reference || f.clause || "—") + '</span>' +
+              '<span class="risk-badge ' + rc + '">' + escHtml(f.risk_level || "N/A") + '</span>' +
+            '</div>' +
+            '<div class="finding-text">' + escHtml(f.finding || "") + '</div>';
+          findingsList.appendChild(card);
+          showSection(findingsSection);
+          break;
+        }
+
+        case "analyst_complete":
+          analystSummary.textContent =
+            (event.findings_count ?? 0) + " finding(s) — confidence " +
+            ((event.confidence ?? 0).toFixed(2));
+          spinnerLabel.textContent = "Synthesizer running\u2026";
+          break;
+
+        case "report_complete":
+          reportContent.textContent = event.report || "";
+          spinnerLabel.textContent = "Finalising\u2026";
+          showSection(reportSection);
+          break;
+
+        case "done":
+          setRunning(false);
+          if (event.trace_id) {
+            const url = "http://localhost:6006/projects/default/traces/" + event.trace_id;
+            traceContainer.innerHTML =
+              '<a class="trace-link" href="' + url + '" target="_blank" rel="noopener">' +
+                "&#128270; View trace in Phoenix &rarr;" +
+              '</a>';
+          } else {
+            traceContainer.innerHTML = '<span class="no-trace">No trace ID available</span>';
+          }
+          showSection(doneSection);
+          break;
+      }
+    }
+
+    // Simple HTML escape to prevent XSS from LLM-generated text
+    function escHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // -----------------------------------------------------------------------
+    // Stream reader — EventSource doesn't support POST, use fetch + ReadableStream
+    // -----------------------------------------------------------------------
+    async function runStream(query) {
+      reset();
+      setRunning(true);
+      spinnerLabel.textContent = "Planner running\u2026";
+
+      let response;
+      try {
+        response = await fetch("/workflow/stream", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+      } catch (err) {
+        showError("Network error: could not reach the server. " + err.message);
+        return;
+      }
+
+      if (!response.ok) {
+        showError("Server error " + response.status + ". Check the API logs and retry.");
+        return;
+      }
+
+      const reader  = response.body.getReader();
+      const decoder = new TextDecoder();
+      let   buffer  = "";
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          // SSE messages are separated by double newlines
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop(); // keep any incomplete tail
+
+          for (const part of parts) {
+            const line = part.trim();
+            if (line.startsWith("data: ")) {
+              try {
+                const event = JSON.parse(line.slice(6));
+                handleEvent(event);
+              } catch (parseErr) {
+                console.warn("Could not parse SSE event:", line, parseErr);
+              }
+            }
+          }
+        }
+      } catch (streamErr) {
+        showError("Stream interrupted: " + streamErr.message + ". You can retry the query.");
+      } finally {
+        // If streaming ended without a 'done' event, stop the spinner
+        if (submitBtn.disabled) setRunning(false);
+      }
+    }
+
+    // -----------------------------------------------------------------------
+    // Event listeners
+    // -----------------------------------------------------------------------
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const query = queryInput.value.trim();
+      if (!query) return;
+      runStream(query);
+    });
+
+    retryBtn.addEventListener("click", () => {
+      const query = queryInput.value.trim();
+      if (!query) return;
+      runStream(query);
+    });
+  </script>
+</body>
+</html>

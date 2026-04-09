@@ -8,10 +8,11 @@ Phase 0: Was single-agent (Analyst only, mock retrieval).
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import AsyncGenerator, List
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from opentelemetry import trace
 
 from consilium.config import settings
@@ -83,19 +84,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="Consilium API",
     description="Multi-agent compliance automation system",
-    version="0.6.0",  # Phase 6
+    version="0.7.0",  # Phase 7
     lifespan=lifespan,
 )
 
 
-@app.get("/")
-async def root() -> dict:
-    """Root health check."""
-    return {
-        "status": "healthy",
-        "version": "0.6.0",
-        "phase": "Phase 5: Observability",
-    }
+_UI_HTML = Path(__file__).parent.parent / "ui" / "index.html"
+
+
+@app.get("/", response_class=HTMLResponse)
+async def ui() -> HTMLResponse:
+    """Serve the streaming web UI."""
+    return HTMLResponse(content=_UI_HTML.read_text())
 
 
 @app.get("/health")
@@ -112,7 +112,7 @@ async def health_check() -> dict:
 
     return {
         "status": "healthy",
-        "version": "0.6.0",
+        "version": "0.7.0",
         "components": {
             "workflow": "WorkflowGraph (planner→analyst→synthesizer)",
             "retrieval": retrieval_status,
