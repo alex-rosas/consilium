@@ -1,40 +1,10 @@
 services:
-  consilium-api:
-    build: .
-    ports:
-      - "8001:8001"
-    environment:
-      # LLM — Ollama must be running on the host
-      - LLM_PROVIDER=ollama
-      # env var defaults allow Linux override: OLLAMA_BASE_URL=http://172.17.0.1:11434 docker-compose up
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
-      # Retrieval — set to "quaestor" once Quaestor is running
-      - RETRIEVAL_PROVIDER=${RETRIEVAL_PROVIDER:-mock}
-      # Quaestor runs as an independent service on the host (separate repo)
-      - QUAESTOR_BASE_URL=${QUAESTOR_BASE_URL:-http://host.docker.internal:8000}
-      # Set to "true" only in development to fall back to mock when Quaestor is down
-      - ALLOW_MOCK_FALLBACK=${ALLOW_MOCK_FALLBACK:-false}
-      # API
-      - API_HOST=0.0.0.0
-      - API_PORT=8001
-      - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    extra_hosts:
-      # Linux compatibility: Docker Desktop defines host.docker.internal automatically;
-      # on native Linux Docker it does not exist. This entry maps it to the Docker bridge
-      # gateway (the host machine), making the config identical across all platforms.
-      # On macOS/Windows Docker Desktop this entry is redundant but harmless.
-      - "host.docker.internal:host-gateway"
-    networks:
-      - consilium-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-
+  # -------------------------------------------------------------------------
+  # phoenix — OTel trace storage and UI
+  # Profiles:
+  #   monitoring  — start Phoenix alone (observability only)
+  #   app         — start full stack (includes Phoenix)
+  # -------------------------------------------------------------------------
   phoenix:
     image: arizephoenix/phoenix:latest
     container_name: consilium-phoenix
@@ -48,6 +18,57 @@ services:
       - phoenix-data:/data
     networks:
       - consilium-network
+    profiles: ["app", "monitoring"]
+
+  # -------------------------------------------------------------------------
+  # quaestor — document retrieval service (separate repo: ../quaestor)
+  # Requires both repos to be co-located as siblings; see README.
+  # -------------------------------------------------------------------------
+  quaestor:
+    build:
+      context: ../quaestor
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    networks:
+      - consilium-network
+    profiles: ["app"]
+
+  # -------------------------------------------------------------------------
+  # consilium — multi-agent compliance API + streaming web UI
+  # -------------------------------------------------------------------------
+  consilium:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      # LLM — Groq (round-robin across up to 3 keys)
+      - LLM_PROVIDER=groq
+      - GROQ_API_KEY_1=${GROQ_API_KEY_1}
+      - GROQ_API_KEY_2=${GROQ_API_KEY_2:-}
+      - GROQ_API_KEY_3=${GROQ_API_KEY_3:-}
+      # Retrieval — Quaestor running as a sibling service
+      - RETRIEVAL_PROVIDER=quaestor
+      - QUAESTOR_BASE_URL=http://quaestor:8000
+      # Observability — Phoenix running as a sibling service
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://phoenix:4318
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    depends_on:
+      - quaestor
+      - phoenix
+    networks:
+      - consilium-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    profiles: ["app"]
 
 networks:
   consilium-network:
@@ -56,9 +77,3 @@ networks:
 volumes:
   phoenix-data:
     driver: local
-
-# NOTE: Quaestor is NOT included here intentionally.
-# Quaestor is an independent service (separate repo, separate compose file).
-# To use real retrieval:
-#   1. Start Quaestor: cd ../quaestor && docker-compose up
-#   2. Set RETRIEVAL_PROVIDER=quaestor above
