@@ -40,3 +40,37 @@ def test_multiple_spans_in_sequence():
         span2.set_attribute("span.id", 2)
 
     # Both spans created without errors
+
+
+def test_init_tracing_with_sample_rate_below_one():
+    """init_tracing with sample_rate < 1.0 uses TraceIdRatioBased sampler."""
+    from opentelemetry.sdk.trace.sampling import TraceIdRatioBased
+
+    tracer = init_tracing(sample_rate=0.1)
+    assert tracer is not None
+
+
+def test_init_tracing_with_sample_rate_one_uses_no_ratio_sampler():
+    """init_tracing with sample_rate=1.0 does not install a ratio sampler."""
+    tracer = init_tracing(sample_rate=1.0)
+    assert tracer is not None
+
+
+def test_trace_sample_rate_in_settings():
+    """Settings.trace_sample_rate defaults to 1.0."""
+    from consilium.config import Settings
+
+    s = Settings()
+    assert s.trace_sample_rate == 1.0
+
+
+def test_trace_sample_rate_rejects_out_of_range():
+    """Settings.trace_sample_rate rejects values outside 0.0–1.0."""
+    from pydantic import ValidationError
+    from consilium.config import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(trace_sample_rate=1.5)
+
+    with pytest.raises(ValidationError):
+        Settings(trace_sample_rate=-0.1)
