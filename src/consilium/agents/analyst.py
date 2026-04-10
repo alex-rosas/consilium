@@ -18,6 +18,13 @@ from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt,
 
 from consilium.agents.base import BaseAgent
 from consilium.integrations.retrieval_mock import RetrievalResult
+
+# Prompt size guardrails — prevent LLM output truncation on large retrievals.
+# Real Quaestor returns up to 20+ chunks for broad queries (e.g. JPMorgan filings).
+# Feeding all chunks produces JSON responses of 10K+ tokens that get cut off mid-string.
+# 6 chunks × 600 chars ≈ 3600 chars input → ~4 findings → ~600 token output.
+_MAX_ANALYST_CHUNKS: int = 6
+_MAX_CHUNK_CHARS: int = 600
 from consilium.schemas.agent import AgentInput, AgentOutput
 from consilium.schemas.findings import ComplianceFinding
 
@@ -113,7 +120,6 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
                 reasoning="No retrieved chunks — skipping LLM call",
             )
 
-        llm = getattr(self, "llm", None) or create_llm_client(self._settings)
         sys_msg, user_msg = self._build_prompt(chunks, task_context=input.task_context)
 
         try:
@@ -124,6 +130,10 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
                 reraise=True,
             ):
                 with attempt:
+                    # Create LLM client inside attempt so each retry rotates to the
+                    # next Groq API key (round-robin in llm_factory). Without this,
+                    # all retries hammer the same key and all fail on rate-limited keys.
+                    llm = getattr(self, "llm", None) or create_llm_client(self._settings)
                     response = await llm.ainvoke([sys_msg, user_msg])
                     raw_text = response.content  # AIMessage.content is the string
                     findings = self._parse_llm_response(raw_text)
@@ -156,17 +166,18 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
         """
         system_content = (
             "You are a compliance risk analyst specialising in financial regulations.\n"
-            "For each document chunk provided, identify compliance risks.\n"
+            "Analyse the document chunks and identify the most critical compliance risks.\n"
             "Output ONLY a valid JSON array — no markdown fences, no explanation.\n"
             "Schema: "
             '[{"clause_reference": "...", "finding": "...", '
             '"risk_level": "High|Medium|Low|N/A", "document_source": "..."}]\n'
             "Rules:\n"
-            "- clause_reference: the specific regulation clause (e.g. 'IFRS 15.31')\n"
-            "- finding: 10-500 char evidence + analytical interpretation\n"
+            "- clause_reference: specific regulation clause (e.g. 'IFRS 15.31')\n"
+            "- finding: 20-100 chars MAXIMUM — one concise sentence only\n"
             "- risk_level: exactly one of High, Medium, Low, N/A\n"
-            "- document_source: the document identifier from the metadata\n"
-            "- Output one finding per relevant chunk (skip chunks with no risk)\n"
+            "- document_source: document identifier from metadata\n"
+            "- Output MAXIMUM 3 findings — prioritise the highest-risk items\n"
+            "- Do NOT repeat similar findings; pick the 3 most distinct risks\n"
             "- If no compliance risks found, output an empty array: []"
         )
 
@@ -175,12 +186,25 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
         if task_context:
             parts.append(f"Task plan:\n{task_context}")
 
+        # Apply guardrails: cap chunk count and truncate long texts to keep the
+        # total prompt within a range where llama-3.1-8b-instant can produce
+        # complete, valid JSON without output truncation.
+        capped_chunks = chunks[:_MAX_ANALYST_CHUNKS]
+        if len(chunks) > _MAX_ANALYST_CHUNKS:
+            logger.debug(
+                "Capping analyst input from %d to %d chunks (guardrail)",
+                len(chunks), _MAX_ANALYST_CHUNKS,
+            )
+
         chunk_lines = []
-        for i, chunk in enumerate(chunks, 1):
+        for i, chunk in enumerate(capped_chunks, 1):
             doc = chunk.metadata.get("document", "Unknown")
             section = chunk.metadata.get("section", "")
             label = f"{doc}" + (f" §{section}" if section else "")
-            chunk_lines.append(f"Chunk {i} [{label}]:\n\"{chunk.chunk_text}\"")
+            text = chunk.chunk_text[:_MAX_CHUNK_CHARS]
+            if len(chunk.chunk_text) > _MAX_CHUNK_CHARS:
+                text += "…"
+            chunk_lines.append(f"Chunk {i} [{label}]:\n\"{text}\"")
 
         parts.append("Retrieved chunks:\n\n" + "\n\n".join(chunk_lines))
         user_content = "\n\n".join(parts)
@@ -189,8 +213,8 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
     def _parse_llm_response(self, response: str) -> List[ComplianceFinding]:
         """Parse and validate the LLM JSON response into ComplianceFinding objects.
 
-        Strips markdown fences if present. Raises ValueError on parse or
-        validation failure so the caller can trigger the fallback.
+        Strips markdown fences if present. Attempts partial recovery on truncated
+        JSON before raising ValueError (which triggers the Tenacity retry).
         """
         text = response.strip()
 
@@ -199,15 +223,36 @@ class AnalystAgent(BaseAgent[AnalystInput, AnalystOutput]):
             inner = [ln for ln in lines[1:] if ln.strip() != "```"]
             text = "\n".join(inner).strip()
 
+        # First try: parse as-is
         try:
             raw = json.loads(text)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"LLM returned invalid JSON: {exc}") from exc
+            if not isinstance(raw, list):
+                raise ValueError("Expected JSON array of finding objects")
+            return [ComplianceFinding.model_validate(item) for item in raw]
+        except json.JSONDecodeError:
+            pass
 
-        if not isinstance(raw, list):
-            raise ValueError("Expected JSON array of finding objects")
+        # Second try: recover truncated array by closing the last complete object.
+        # Handles the case where Groq output is cut off mid-string due to token limits.
+        try:
+            start = text.find("[")
+            if start == -1:
+                raise ValueError("LLM returned no JSON array")
+            # Find the last complete object boundary — last `},` or `}` before the end
+            last_complete = max(text.rfind("},"), text.rfind("}\n"))
+            if last_complete > start:
+                repaired = text[start : last_complete + 1] + "]"
+                raw = json.loads(repaired)
+                if isinstance(raw, list) and raw:
+                    logger.debug(
+                        "Recovered %d finding(s) from truncated JSON (%d→%d chars)",
+                        len(raw), len(text), len(repaired),
+                    )
+                    return [ComplianceFinding.model_validate(item) for item in raw]
+        except (json.JSONDecodeError, ValueError):
+            pass
 
-        return [ComplianceFinding.model_validate(item) for item in raw]
+        raise ValueError(f"LLM returned unparseable JSON (len={len(text)})")
 
     def _fallback_findings(
         self, chunks: List[RetrievalResult], error: str

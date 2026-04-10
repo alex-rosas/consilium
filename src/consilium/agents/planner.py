@@ -103,7 +103,6 @@ class PlannerAgent(BaseAgent[PlannerInput, PlannerOutput]):
         """
         from consilium.integrations.llm_factory import create_llm_client
 
-        llm = getattr(self, "llm", None) or create_llm_client(self._settings)
         sys_msg, user_msg = self._build_prompt(input.user_query)
 
         try:
@@ -114,6 +113,10 @@ class PlannerAgent(BaseAgent[PlannerInput, PlannerOutput]):
                 reraise=True,
             ):
                 with attempt:
+                    # Create LLM client inside attempt so each retry rotates to the
+                    # next Groq API key (round-robin in llm_factory). Without this,
+                    # all retries hammer the same key and all fail on rate-limited keys.
+                    llm = getattr(self, "llm", None) or create_llm_client(self._settings)
                     response = await llm.ainvoke([sys_msg, user_msg])
                     raw_text = response.content  # AIMessage.content is the string
                     task_plan = self._parse_llm_response(raw_text)
