@@ -383,12 +383,27 @@ def compute_metrics(results: List[CaseResult]) -> EvalMetrics:
 # ---------------------------------------------------------------------------
 
 
-async def main(api_url: str, phase: str, store_responses: bool = False) -> None:
+async def main(
+    api_url: str,
+    phase: str,
+    store_responses: bool = False,
+    inter_case_delay: float = 0.0,
+    golden_path: Path = GOLDEN_PATH,
+) -> None:
     logger.info("=== Consilium Evaluation Runner ===")
-    logger.info("API: %s | Phase: %s | Golden: %s | store_responses: %s", api_url, phase, GOLDEN_PATH, store_responses)
+    logger.info(
+        "API: %s | Phase: %s | Golden: %s | store_responses: %s | inter_case_delay: %.1fs",
+        api_url, phase, golden_path, store_responses, inter_case_delay,
+    )
+    if inter_case_delay > 0:
+        estimated_minutes = (len(json.loads(golden_path.read_text())) * inter_case_delay) / 60
+        logger.info(
+            "Rate-limit-safe mode: %.1fs delay between cases — estimated runtime %.1f min",
+            inter_case_delay, estimated_minutes,
+        )
 
     # Load golden dataset
-    with open(GOLDEN_PATH) as f:
+    with open(golden_path) as f:
         raw = json.load(f)
     cases = [GoldenCase(**c) for c in raw]
     logger.info("Loaded %d golden cases", len(cases))
@@ -397,11 +412,27 @@ async def main(api_url: str, phase: str, store_responses: bool = False) -> None:
     quaestor_reachable = await check_quaestor_reachable(api_url)
     logger.info("Quaestor reachable: %s", quaestor_reachable)
 
-    # Run all cases
+    # Run all cases with optional inter-case delay to avoid Groq free-tier rate limiting.
+    # Each case fires 3 LLM calls (planner + analyst + synthesizer). Without a delay,
+    # 30 sequential cases exhaust the per-minute token budget around case 7.
+    #
+    # Adaptive delay: a failed case means Tenacity exhausted 3 retries — each retry is
+    # a full LLM call, so a failure burns ~3x the tokens of a success. The next case
+    # should wait 3× longer to let the rate-limit window recover.
     results: List[CaseResult] = []
+    last_failed = False
     async with httpx.AsyncClient() as client:
-        for case in cases:
+        for i, case in enumerate(cases):
+            if inter_case_delay > 0 and i > 0:
+                wait = inter_case_delay * 3 if last_failed else inter_case_delay
+                logger.info(
+                    "Waiting %.1fs before case %d/%d (%s)%s",
+                    wait, i + 1, len(cases), case.id,
+                    " — EXTENDED (previous case failed, token budget depleted)" if last_failed else " — rate-limit buffer",
+                )
+                await asyncio.sleep(wait)
             result = await run_case(client, api_url, case, quaestor_reachable, store_responses=store_responses)
+            last_failed = not result.success and not result.skipped
             results.append(result)
 
     # Compute metrics
@@ -496,5 +527,30 @@ if __name__ == "__main__":
         default=False,
         help="Store full API response body (findings text, report) per case in results JSON",
     )
+    parser.add_argument(
+        "--inter-case-delay",
+        type=float,
+        default=0.0,
+        metavar="SECONDS",
+        help=(
+            "Seconds to wait between cases (default: 0). "
+            "Use 15 with 3 Groq keys to avoid free-tier rate limiting on all 30 cases. "
+            "Estimated runtime: N_cases × delay / 60 minutes."
+        ),
+    )
+    parser.add_argument(
+        "--golden",
+        type=Path,
+        default=GOLDEN_PATH,
+        metavar="PATH",
+        help="Path to golden cases JSON (default: eval/golden_workflows.json). "
+             "Useful for re-running a subset of cases.",
+    )
     args = parser.parse_args()
-    asyncio.run(main(api_url=args.api_url, phase=args.phase, store_responses=args.store_responses))
+    asyncio.run(main(
+        api_url=args.api_url,
+        phase=args.phase,
+        store_responses=args.store_responses,
+        inter_case_delay=args.inter_case_delay,
+        golden_path=args.golden,
+    ))

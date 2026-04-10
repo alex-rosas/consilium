@@ -1,0 +1,105 @@
+[
+  {
+    "id": "rev-007",
+    "query": "Analyze IFRS 15 transaction price allocation compliance in financial services revenue reporting.",
+    "expected_risk_levels": [
+      "High",
+      "Medium"
+    ],
+    "expected_agents_invoked": [
+      "planner",
+      "analyst",
+      "synthesizer"
+    ],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "Transaction price allocation (step 4 of IFRS 15) \u2014 broader financial services framing. Tests generalization beyond JPMorgan-specific data."
+  },
+  {
+    "id": "aud-003",
+    "query": "Identify material misstatement risks in JPMorgan Q3 2023 based on PCAOB audit standards.",
+    "expected_risk_levels": [
+      "High",
+      "Medium"
+    ],
+    "expected_agents_invoked": [
+      "planner",
+      "analyst",
+      "synthesizer"
+    ],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "Material misstatement under PCAOB \u2014 high-stakes query. MockRetrieval PCAOB chunk has risk_level: Medium metadata. Expect High or Medium finding."
+  },
+  {
+    "id": "aud-004",
+    "query": "Review internal control compliance in JPMorgan's Q3 2023 revenue reporting under PCAOB AS 2201.",
+    "expected_risk_levels": [
+      "High",
+      "Medium",
+      "Low"
+    ],
+    "expected_agents_invoked": [
+      "planner",
+      "analyst",
+      "synthesizer"
+    ],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "PCAOB AS 2201 (internal control over financial reporting). Tests whether the planner correctly decomposes a controls-focused audit query."
+  },
+  {
+    "id": "edge-002",
+    "query": "Analyze cross-company revenue recognition compliance patterns across JPMorgan and Wells Fargo Q3 2023.",
+    "expected_risk_levels": [
+      "High",
+      "Medium",
+      "Low",
+      "N/A"
+    ],
+    "expected_agents_invoked": [
+      "planner",
+      "analyst",
+      "synthesizer"
+    ],
+    "expected_min_findings": 1,
+    "requires_retrieval": true,
+    "label": "Multi-company cross-document comparison requiring entity linking. MockRetrieval only has JPMorgan data. With real Quaestor this tests cross-document retrieval. Expect N/A or caveat finding noting Wells Fargo data is unavailable."
+  },
+  {
+    "id": "amb-003",
+    "query": "Review whether JPMorgan's Q3 2023 fair value measurements comply with IFRS 13 or ASC 820 hierarchy requirements.",
+    "expected_risk_levels": [
+      "High",
+      "Medium",
+      "Low",
+      "N/A"
+    ],
+    "expected_agents_invoked": [
+      "planner",
+      "analyst",
+      "synthesizer"
+    ],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "IFRS 13 vs ASC 820 fair value hierarchy. Standards are substantially converged but have textual differences. Analyst may produce findings with uncertainty caveats \u2014 tests intermediate confidence path."
+  },
+  {
+    "id": "amb-004",
+    "query": "Are there compliance gaps in JPMorgan's 2023 segment reporting that could trigger concerns under both IFRS 8 and ASC 280?",
+    "expected_risk_levels": [
+      "High",
+      "Medium",
+      "Low",
+      "N/A"
+    ],
+    "expected_agents_invoked": [
+      "planner",
+      "analyst",
+      "synthesizer"
+    ],
+    "expected_min_findings": 1,
+    "requires_retrieval": false,
+    "label": "IFRS 8 vs ASC 280 segment reporting \u2014 another converged-but-not-identical standard pair. MockRetrieval does not contain segment data. Sparse retrieval context with dual-standard ambiguity \u2014 intermediate confidence candidate."
+  }
+]
