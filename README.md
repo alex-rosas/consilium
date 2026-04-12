@@ -325,8 +325,8 @@ Requires both repos as siblings:
 
 ```bash
 # 1. Clone both repos as siblings
-git clone https://github.com/your-username/quaestor.git
-git clone https://github.com/your-username/consilium.git
+git clone https://github.com/alex-rosas/quaestor.git
+git clone https://github.com/alex-rosas/consilium.git
 
 # Resulting layout:
 #   projects/
