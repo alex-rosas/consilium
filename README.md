@@ -9,6 +9,50 @@
 
 ---
 
+## What Is Consilium?
+
+Consilium is a **multi-agent compliance analysis system** where three specialized AI agents collaborate **sequentially** in a workflow to produce structured regulatory assessments.
+
+**Architecture pattern:** Multi-agent sequential workflow (role-specialized pipeline)  
+**NOT:** Ensemble system (parallel models aggregating answers)
+
+```
+Query → [PlannerAgent] → [AnalystAgent + Quaestor] → [SynthesizerAgent] → Report
+          task plan        retrieve + classify          synthesize
+```
+
+Each agent has a distinct role and operates on a shared `WorkflowState` (LangGraph `StateGraph`). No agent calls another agent — LangGraph routes between them.
+
+### Why Not a Simpler Approach?
+
+| Approach | Gap for this domain |
+|---|---|
+| Single LLM call | No retrieval — hallucinates clause numbers, relies on training-data IFRS |
+| RAG only | Retrieves context but produces no structured, per-clause risk assessment |
+| Fine-tuned single model | Requires labelled training data per regulatory standard |
+| **Consilium** | Decomposes → retrieves from authoritative sources → classifies per clause → synthesises |
+
+The compliance domain specifically requires task decomposition (query → sub-tasks), authoritative retrieval (exact IFRS/PCAOB text, not LLM memory), and structured output (risk-rated findings with citations). A single-call approach fails all three.
+
+### Sequential vs Ensemble — Explicit Contrast
+
+Engineers pattern-match on "multi-agent" to mean ensemble. This is different:
+
+- **Ensemble:** Same question → 3 models in parallel → vote on answer
+- **Consilium:** Complex question → 3 agents in sequence → each does one specialised step
+
+Example query: *"Assess JPMorgan Q3 revenue recognition vs IFRS 15"*
+
+| Agent | Role | Output |
+|---|---|---|
+| PlannerAgent | Decomposes query into max 3 sub-tasks | `["Identify IFRS 15 scope clauses", "Extract Q3 revenue claims", "Assess risk per clause"]` |
+| AnalystAgent | Fetches IFRS 15 clauses from Quaestor; classifies each against query | `[FindingCard(clause="IFRS 15.31", risk="High"), …]` |
+| SynthesizerAgent | Aggregates findings into Executive Summary + Detailed Findings | Final compliance report |
+
+This is **task decomposition**, not answer aggregation.
+
+---
+
 ## Try It
 
 **[→ Live static demo](https://consilium-multiagent.streamlit.app/)** — no setup required.
@@ -28,29 +72,22 @@ docker-compose --profile app up
 
 ## Table of Contents
 
-- [Consilium — Multi-Agent Compliance Automation](#consilium--multi-agent-compliance-automation)
-  - [Try It](#try-it)
-  - [Table of Contents](#table-of-contents)
-  - [What It Does](#what-it-does)
-  - [Demonstration — Before and After](#demonstration--before-and-after)
-    - [Phase 0 — Rule-Based Baseline](#phase-0--rule-based-baseline)
-    - [Phase 7 — LLM Analysis with Real Retrieval](#phase-7--llm-analysis-with-real-retrieval)
-  - [How It Works](#how-it-works)
-  - [Streaming Pipeline](#streaming-pipeline)
-  - [Results](#results)
-    - [Eval — 30-Case Golden Dataset](#eval--30-case-golden-dataset)
-    - [Phase Progression](#phase-progression)
-  - [Stack](#stack)
-  - [How to Run](#how-to-run)
-    - [Quick Start (Docker)](#quick-start-docker)
-    - [Local Development](#local-development)
-    - [Environment Variables](#environment-variables)
-  - [Key Engineering Decisions](#key-engineering-decisions)
-  - [What Was Intentionally Not Built](#what-was-intentionally-not-built)
-  - [Known Technical Debt](#known-technical-debt)
-  - [Project Structure](#project-structure)
-  - [Phases](#phases)
-  - [Case Study](#case-study)
+- [What Is Consilium?](#what-is-consilium)
+- [Try It](#try-it)
+- [What It Does](#what-it-does)
+- [Demonstration — Before and After](#demonstration--before-and-after)
+- [How It Works](#how-it-works)
+- [Streaming Pipeline](#streaming-pipeline)
+- [Results](#results)
+- [Stack](#stack)
+- [How to Run](#how-to-run)
+- [Key Engineering Decisions](#key-engineering-decisions)
+- [Known Limitations](#known-limitations)
+- [What Was Intentionally Not Built](#what-was-intentionally-not-built)
+- [Known Technical Debt](#known-technical-debt)
+- [Project Structure](#project-structure)
+- [Phases](#phases)
+- [Case Study](#case-study)
 
 ---
 
@@ -136,28 +173,58 @@ Indexed documents: JPMorgan Chase Q3 2023 10-Q; Apple FY2025 10-K; IFRS 9/15/16;
 
 ## How It Works
 
-```
-Browser
-  │  GET /                    → single-file vanilla JS UI (no build step)
-  │  POST /workflow/stream    → SSE event stream (fetch + ReadableStream)
-  ▼
-FastAPI (port 8001)
-  │
-  ▼
-LangGraph (directed graph, async)
-  ├── PlannerAgent     → LLM call → task_plan[], confidence
-  ├── AnalystAgent     → Quaestor /retrieve → LLM call → risk_findings[]
-  └── SynthesizerAgent → LLM call → final_report (markdown)
-        │                    │
-        ▼                    ▼
-    Groq LLM            Quaestor API (port 8000)
-    llama-3.1-8b        hierarchical chunk retrieval
-    round-robin keys    cross-encoder reranked results
+### Agent Workflow
 
-        │ OTLP HTTP
-        ▼
-    Arize Phoenix (port 6006)
-    per-agent OTel spans, latency, trace view
+```
+User Query
+    │
+    ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ PlannerAgent                                                     │
+│ Task: decompose query into ≤3 sub-tasks                         │
+│ In:  query string                                               │
+│ Out: task_plan[], confidence score                              │
+└──────────────────────────────────────────────────────────────────┘
+    │  WorkflowState (task_plan, query)
+    ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ AnalystAgent                           ┌─────────────────────┐  │
+│ Task: retrieve clauses, classify risk  │   Quaestor API      │  │
+│ In:  task_plan[]                   ───▶│  /retrieve          │  │
+│ Out: risk_findings[], confidence       │  cross-encoder      │  │
+│                                        │  reranked chunks    │  │
+│                                        └─────────────────────┘  │
+└──────────────────────────────────────────────────────────────────┘
+    │  WorkflowState (risk_findings, confidence)
+    ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ SynthesizerAgent                                                 │
+│ Task: synthesise findings into compliance report                │
+│ In:  risk_findings[], query                                     │
+│ Out: final_report (markdown — Executive Summary + Findings)     │
+└──────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+SSE stream → Browser (per-agent events as each node completes)
+    │
+    ▼  OTLP HTTP
+Arize Phoenix — per-agent spans, latency, full trace
+```
+
+**Key:** Each agent runs **once** per query, in sequence. No parallel execution, no voting, no aggregation across models.
+
+### Infrastructure
+
+```
+Browser (vanilla JS, no build step)
+  ├── GET  /          → single HTML file
+  └── POST /workflow/stream → SSE event stream (fetch + ReadableStream)
+
+FastAPI (port 8001)
+  └── LangGraph StateGraph
+        ├── PlannerNode    → Groq llama-3.1-8b
+        ├── AnalystNode    → Quaestor (port 8000) + Groq
+        └── SynthesizerNode → Groq
 ```
 
 The key architectural choice is the `WorkflowState` TypedDict: a single shared data contract threaded through all three LangGraph nodes. No agent stores state. No agent calls another agent. LangGraph merges partial dict returns after each node and routes to the next.
@@ -229,7 +296,7 @@ Each phase had a numeric exit gate before merging. Test count, eval pass rate, a
 
 *Left: completion rate per phase. Right: P50/P95 latency on log scale — Phase 2→3 Ollama→Groq 67× drop, Phase 6→7 P95 11.5× improvement.*
 
-†76.7% in Phase 6 was caused by the analyst agent feeding uncapped LLM prompts — Quaestor returns 15–20 large chunks for broad queries, producing 8000+ char JSON output that got truncated mid-string. Phase 7 fixed this with `_MAX_ANALYST_CHUNKS=6`. The gate surfaced a real architectural defect.
+†The gate surfaced a real architectural defect that was diagnosed and fixed in Phase 7. Full forensic account in [`docs/case_study.md`](docs/case_study.md).
 
 ---
 
@@ -239,7 +306,7 @@ Each phase had a numeric exit gate before merging. Test count, eval pass rate, a
 |---|---|---|
 | API | FastAPI 0.104+ | ASGI, async-native, OpenAPI docs |
 | Orchestration | LangGraph | Explicit graph topology, per-node streaming via `astream()` |
-| LLM | Groq `llama-3.1-8b-instant` | 300+ tok/s free tier; 3-key round-robin rotation |
+| LLM | Groq `llama-3.1-8b-instant` | 300+ tok/s free tier; one free key |
 | Retrieval | Quaestor API | Hierarchical chunking, cross-encoder reranking |
 | Validation | Pydantic v2 `extra="forbid"` | ValidationError at boundary > silent data loss |
 | Tracing | OpenTelemetry → Arize Phoenix | Per-agent spans, latency breakdown |
@@ -254,47 +321,61 @@ Each phase had a numeric exit gate before merging. Test count, eval pass rate, a
 
 Requires both repos as siblings:
 
-```
-projects/
-  consilium/   ← this repo
-  quaestor/    ← document retrieval (sibling)
-```
+**Both repos must be cloned as siblings** — `docker-compose.yml` builds Quaestor from `../quaestor`.
 
 ```bash
-cp .env.example .env
-# Set GROQ_API_KEY_1=gsk_...
+# 1. Clone both repos as siblings
+git clone https://github.com/your-username/quaestor.git
+git clone https://github.com/your-username/consilium.git
 
+# Resulting layout:
+#   projects/
+#     quaestor/   ← document retrieval service (port 8000)
+#     consilium/  ← this repo (port 8001)
+
+# 2. Configure
+cd consilium
+cp .env.example .env
+# Edit .env — set GROQ_API_KEY to your key from console.groq.com
+
+# 3. Start the full stack (Quaestor + Consilium + Phoenix)
 docker-compose --profile app up
 ```
 
 | Service | Port | URL |
 |---|---|---|
 | Consilium | 8001 | http://localhost:8001 |
-| Quaestor | 8000 | http://localhost:8000 |
+| Quaestor | 8000 | http://localhost:8000 (built from `../quaestor`) |
 | Phoenix | 6006 | http://localhost:6006 |
+
+> **Quaestor** is a separate repository that provides document retrieval (hierarchical chunking, cross-encoder reranking). Consilium calls it at runtime via `QUAESTOR_BASE_URL`. Without it, set `RETRIEVAL_PROVIDER=mock` to run with deterministic test fixtures instead of real document retrieval.
 
 ### Local Development
 
 ```bash
+# Clone both repos first (see Quick Start above)
+
+cd consilium
 uv venv && source .venv/bin/activate
 uv pip install -e ".[dev]"
+cp .env.example .env  # set GROQ_API_KEY
 
-cp .env.example .env  # GROQ_API_KEY_1 required
-
-# Start Quaestor (from sibling directory)
+# Terminal 1 — Start Quaestor
 cd ../quaestor && uvicorn quaestor.api.main:app --port 8000
 
-# Start Consilium
-uvicorn consilium.api.main:app --port 8001 --reload
+# Terminal 2 — Start Consilium
+cd ../consilium && uvicorn consilium.api.main:app --port 8001 --reload
 ```
+
+To skip Quaestor for local dev, set `RETRIEVAL_PROVIDER=mock` in `.env` — all agent logic runs normally with deterministic fixture data.
 
 ### Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `GROQ_API_KEY_1` | _(required)_ | Primary Groq API key |
-| `GROQ_API_KEY_2`, `_3` | — | Optional — round-robin rotation |
-| `RETRIEVAL_PROVIDER` | `mock` | `mock` or `quaestor` |
+| `GROQ_API_KEY` | _(required)_ | Groq API key — get one free at [console.groq.com](https://console.groq.com) |
+| `GROQ_MODEL` | `llama-3.1-8b-instant` | Groq model name |
+| `RETRIEVAL_PROVIDER` | `mock` | `mock` (no external dependency) or `quaestor` (real retrieval) |
 | `QUAESTOR_BASE_URL` | `http://localhost:8000` | Quaestor endpoint |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://localhost:4318` | Phoenix OTLP HTTP |
 | `CONFIDENCE_THRESHOLD` | `0.5` | Minimum confidence to accept agent output |
@@ -308,13 +389,28 @@ Full reasoning in [`docs/case_study.md`](docs/case_study.md). Summary:
 
 **1. LangGraph over raw async chaining** — Makes the graph topology explicit, enforces `WorkflowState` as the single data contract, and provides per-node streaming via `astream()` with no additional plumbing. The cost is a dependency on LangGraph's API surface.
 
-**2. Groq + 3-key round-robin** — 300+ tok/s free tier made a 30-case sequential eval practical. Keys rotate per LLM call via a thread-safe global counter, and per Tenacity retry so a rate-limited key isn't retried against itself.
+**2. Groq free tier** — 300+ tok/s on `llama-3.1-8b-instant`, fast enough that a 30-case sequential eval completes in under 2 minutes with a single free key.
 
 **3. SSE over WebSockets** — One `POST /workflow/stream` request, one persistent response body, no state. WebSockets add bidirectional complexity that isn't needed. The one friction: `EventSource` doesn't support `POST`, so the UI uses `fetch + ReadableStream` instead.
 
 **4. `extra="forbid"` on every Pydantic model** — Established in Phase 0, never relaxed. LLM output that adds unexpected fields raises `ValidationError` at the boundary. In a compliance context, silent data acceptance is a correctness failure.
 
 **5. Phase-gated eval** — Every phase had a numeric exit criterion. The Phase 6 gate failure (76.7%) surfaced a real architectural defect in `AnalystAgent`. Without the gate, the truncation bug would have shipped silently.
+
+---
+
+## Known Limitations
+
+100% on the 30-case golden dataset. Known constraints for queries outside that set:
+
+| Limitation | Impact |
+|---|---|
+| Retrieval capped at 6 chunks | Broad queries covering many sections get incomplete analysis |
+| Cross-standard comparisons | Planner may produce a single task, Analyst retrieves one standard only |
+| Numerical precision not guaranteed | LLM may paraphrase exact thresholds from retrieved text |
+| No clarification loop | Ambiguous entity references are resolved by picking the most prominent mention |
+
+Root causes, fixes, and the Phase 6 failure forensics: [`docs/case_study.md`](docs/case_study.md).
 
 ---
 
@@ -328,6 +424,8 @@ Full reasoning in [`docs/case_study.md`](docs/case_study.md). Summary:
 | **Paid Groq tier** | Free tier works with `_MAX_ANALYST_CHUNKS=6`; removing the cap is an operational decision |
 | **Shared Quaestor/Consilium schema** | `RetrievalResult` is defined independently in both; a shared package requires publishing infrastructure |
 | **OTel Collector** | Direct OTLP HTTP to Phoenix is sufficient at single-service scale |
+
+For what *does* break and why, see [Known Limitations](#known-limitations).
 
 ---
 
@@ -358,7 +456,7 @@ consilium/
 │   │   ├── analyst.py         # AnalystAgent — retrieves chunks, LLM classifies findings
 │   │   └── synthesizer.py     # SynthesizerAgent — generates compliance report
 │   ├── integrations/
-│   │   ├── llm_factory.py     # create_llm_client() — Groq/Ollama, round-robin key rotation
+│   │   ├── llm_factory.py     # create_llm_client() — Groq/Ollama backend selection
 │   │   ├── quaestor_client.py # QuaestorClient — HTTP retrieval with Tenacity retry
 │   │   └── retrieval_mock.py  # MockRetrieval — deterministic test fixture
 │   ├── schemas/               # Pydantic models: WorkflowRequest, WorkflowResponse, ComplianceFinding, SSE events

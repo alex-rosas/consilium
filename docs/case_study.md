@@ -7,6 +7,9 @@
 ## Table of Contents
 
 - [The Problem](#the-problem)
+- [When to Use Consilium](#when-to-use-consilium-vs-alternatives)
+- [Cost Structure](#cost-structure)
+- [Known Limitations](#known-limitations)
 - [Why Multi-Agent](#why-multi-agent)
 - [Relation to Prior Work](#relation-to-prior-work)
 - [Industry Context and Positioning](#industry-context-and-positioning)
@@ -46,6 +49,96 @@ The engineering problem is not compliance knowledge — it is building a multi-a
 2. **Is observable** — when something goes wrong, you need to know which agent, on which input, with what output
 3. **Streams truthfully** — the browser renders what the agents *actually produce*, not a simulation of it
 4. **Is testable in isolation** — 207 unit tests run offline in 22 seconds; no external services required
+
+---
+
+## When to Use Consilium (vs Alternatives)
+
+### ✅ Use when:
+
+**Multi-step reasoning required**
+> *"Assess revenue recognition risks in JPMorgan Q3 2023 under IFRS 15"*
+> Needs: retrieve IFRS 15 clauses → extract revenue claims → classify risk per clause → synthesise.
+> A single LLM call with the full document produces hallucinated clause numbers and unstructured prose.
+
+**Domain-specific retrieval is critical**
+> *"Compare our lease treatment vs IFRS 16.22"*
+> Must retrieve exact IFRS 16.22 text — LLM training data is frozen at a cut-off date; regulatory standards are updated annually.
+
+**Structured, citeable output is required**
+> The Analyst produces Pydantic-validated `ComplianceFinding` objects with `clause_reference`, `risk_level`, and `document_source`. A single-call prompt returns unstructured prose, which breaks downstream processing and audit trails.
+
+### ❌ Don't use when:
+
+| Scenario | Why | Use instead |
+|---|---|---|
+| Simple factual query ("What is IFRS 15?") | Single LLM call is sufficient | Direct Groq/GPT call |
+| Real-time latency required (<500ms) | 3 sequential LLM calls = 2–4s minimum | Fine-tuned single model |
+| No structured output needed | Pipeline overhead without payoff | Basic RAG + single synthesis |
+
+### When the overhead pays for itself
+
+The 3-agent pipeline costs ~3× the tokens of a single LLM call. That overhead buys:
+- Retrieval from authoritative sources (exact IFRS/PCAOB text, not LLM memory)
+- Per-clause structured risk assessment with source citations
+- Fallback events per agent — failures are visible, not silently swallowed
+- Intermediate outputs logged to Phoenix for a full audit trail
+
+Against a manual compliance review that takes 30–90 minutes, the extra ~$0.004 per query is negligible.
+
+---
+
+## Cost Structure
+
+**Per-query token breakdown** (Groq `llama-3.1-8b-instant`, approximate):
+
+| Agent | Input tokens | Output tokens | Notes |
+|---|---|---|---|
+| PlannerAgent | ~600 (system + query) | ~200 (task list JSON) | Scales with query length |
+| AnalystAgent | ~1800 (system + 6 chunks × 600 chars) | ~400 (3 findings JSON) | Capped by `_MAX_ANALYST_CHUNKS=6` |
+| SynthesizerAgent | ~1200 (system + findings) | ~600 (report markdown) | Scales with finding count |
+| **Total** | **~3600** | **~1200** | **~4800 tokens/query** |
+
+**Cost at Groq free-tier pricing** (~$0.05/1M input, ~$0.08/1M output):
+
+| Volume | Estimated cost |
+|---|---|
+| 100 queries/month | ~$0.03 |
+| 1,000 queries/month | ~$0.30 |
+| 10,000 queries/month | ~$3.00 |
+| Manual analyst (30 min @ $80/hr) | **~$40/query** |
+
+**Scaling note:** At >50K queries/month, consider prompt caching for common regulatory clause prefixes (estimated 25–35% token reduction) and the Groq batch API for non-urgent assessments.
+
+---
+
+## Known Limitations
+
+100% on the 30-case golden dataset. These are architectural constraints that would produce failures on queries outside that set.
+
+### 1. Retrieval cap limits breadth on large document sets
+
+`_MAX_ANALYST_CHUNKS=6` caps the chunks fed to the Analyst. For broad queries that span many sections (e.g. *"All IFRS 15 risks across the full 10-Q"*), only the 6 highest-ranked chunks are analysed. Remaining sections are silently excluded.
+
+**Root cause:** Groq's output token window was cut off at ~8000 chars when uncapped prompts produced 15–20 chunks of output. **Fix:** Paid Groq tier or local inference with no output cap removes the constraint.
+
+### 2. Cross-standard comparison queries may produce partial reports
+
+Queries comparing two standards (e.g. *"IFRS 15 vs ASC 606 on revenue recognition"*) rely on the PlannerAgent decomposing the query into two separate retrieval tasks. If the planner produces a single task, the Analyst retrieves for one standard only.
+
+**Root cause:** Planner system prompt has no explicit handling for comparison decomposition. **Fix:** Add a comparison detection template to the planner prompt.
+
+### 3. Numerical precision is not guaranteed
+
+The LLM may paraphrase exact numerical thresholds from retrieved clauses (e.g. *"approximately 10%"* instead of *"10% of consolidated revenue"* from IFRS 8.13). The source text in the retrieved chunk is accurate; the LLM summarisation may compress it.
+
+**Root cause:** LLM temperature > 0 conflicts with verbatim numeric preservation. **Fix:** Post-process findings to extract and pass through numeric values from the source chunk text.
+
+### 4. No query clarification loop
+
+Ambiguous entity references (e.g. *"assess the acquisition"* when the 10-Q mentions three) are not disambiguated — the PlannerAgent picks the most prominent mention.
+
+**Root cause:** Single-pass stateless pipeline. **Fix:** A clarification turn before PlannerAgent, requiring stateful session management.
 
 ---
 
