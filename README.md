@@ -11,7 +11,7 @@
 
 ## Try It
 
-**[→ Live static demo](https://consilium-demo.streamlit.app/)** — no setup required.
+**[→ Live static demo](https://consilium-multiagent.streamlit.app/)** — no setup required.
 
 Pre-recorded responses from the 30-case golden evaluation dataset, covering IFRS 15, PCAOB AS 2810, Basel III, and SEC Reg S-X. Switch between the **Pipeline View** (per-agent JSON inspection + WorkflowState trace) and the **Results** tab (latency scatter, confidence histogram, risk distribution) to explore the architecture.
 
@@ -28,19 +28,29 @@ docker-compose --profile app up
 
 ## Table of Contents
 
-- [What It Does](#what-it-does)
-- [Demonstration — Before and After](#demonstration--before-and-after)
-- [How It Works](#how-it-works)
-- [Streaming Pipeline](#streaming-pipeline)
-- [Results](#results)
-- [Stack](#stack)
-- [How to Run](#how-to-run)
-- [Key Engineering Decisions](#key-engineering-decisions)
-- [What Was Intentionally Not Built](#what-was-intentionally-not-built)
-- [Known Technical Debt](#known-technical-debt)
-- [Project Structure](#project-structure)
-- [Phases](#phases)
-- [Case Study](#case-study)
+- [Consilium — Multi-Agent Compliance Automation](#consilium--multi-agent-compliance-automation)
+  - [Try It](#try-it)
+  - [Table of Contents](#table-of-contents)
+  - [What It Does](#what-it-does)
+  - [Demonstration — Before and After](#demonstration--before-and-after)
+    - [Phase 0 — Rule-Based Baseline](#phase-0--rule-based-baseline)
+    - [Phase 7 — LLM Analysis with Real Retrieval](#phase-7--llm-analysis-with-real-retrieval)
+  - [How It Works](#how-it-works)
+  - [Streaming Pipeline](#streaming-pipeline)
+  - [Results](#results)
+    - [Eval — 30-Case Golden Dataset](#eval--30-case-golden-dataset)
+    - [Phase Progression](#phase-progression)
+  - [Stack](#stack)
+  - [How to Run](#how-to-run)
+    - [Quick Start (Docker)](#quick-start-docker)
+    - [Local Development](#local-development)
+    - [Environment Variables](#environment-variables)
+  - [Key Engineering Decisions](#key-engineering-decisions)
+  - [What Was Intentionally Not Built](#what-was-intentionally-not-built)
+  - [Known Technical Debt](#known-technical-debt)
+  - [Project Structure](#project-structure)
+  - [Phases](#phases)
+  - [Case Study](#case-study)
 
 ---
 

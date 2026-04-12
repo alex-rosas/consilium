@@ -7,7 +7,7 @@ actual pipeline executions stored in eval/results/.
 
 Deploy to Streamlit Community Cloud:
     Main file path: demo/app.py
-    Repo: github.com/your-username/consilium
+    Repo: github.com/alex-rosas/consilium
 
 Run locally:
     pip install streamlit plotly
@@ -127,7 +127,7 @@ st.markdown(
         on the Phase 6 eval dataset (30 cases, JPMorgan Q3 2023 filings · IFRS 15 · PCAOB · Basel III).
         No API keys or running services required.
         &nbsp;·&nbsp;
-        <a href="https://github.com/your-username/consilium" style="color:#93c5fd;">
+        <a href="https://github.com/alex-rosas/consilium" style="color:#93c5fd;">
             View source on GitHub →
         </a>
     </div>
